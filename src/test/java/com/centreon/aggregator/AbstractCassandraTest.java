@@ -2,6 +2,9 @@ package com.centreon.aggregator;
 
 import static com.centreon.aggregator.service.AggregationUnit.UTC_ZONE;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
@@ -9,18 +12,26 @@ import java.util.TimeZone;
 
 import com.centreon.aggregator.configuration.CassandraConfiguration;
 import com.centreon.aggregator.data_access.RRDQueries;
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Session;
+import com.centreon.aggregator.error_handling.ErrorFileLogger;
 
-import info.archinnov.achilles.embedded.CassandraEmbeddedServerBuilder;
 import info.archinnov.achilles.script.ScriptExecutor;
 
 public abstract class AbstractCassandraTest extends AbstractEmbeddedCassandra {
 
     protected static final ScriptExecutor SCRIPT_EXECUTOR = new ScriptExecutor(SESSION);
     protected static final CassandraConfiguration.DSETopology DSE_TOPOLOGY = new CassandraConfiguration.DSETopology("centreon", "dc1");
+    protected static final ByteArrayOutputStream BAOS = new ByteArrayOutputStream();
+    protected static final ErrorFileLogger errorFileLogger;
 
-    protected static RRDQueries RRD_QUERIES = new RRDQueries(SESSION, DSE_TOPOLOGY);
+    static {
+        try {
+            errorFileLogger = new ErrorFileLogger(new PrintWriter(BAOS));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected static final RRDQueries RRD_QUERIES = new RRDQueries(SESSION, DSE_TOPOLOGY, errorFileLogger);
     protected static final DateTimeFormatter SECOND_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     protected LocalDateTime getLocalDateTimeFromHour(int hour) {

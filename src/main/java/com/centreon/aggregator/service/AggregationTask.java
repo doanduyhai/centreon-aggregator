@@ -66,19 +66,19 @@ public class AggregationTask implements Runnable {
                 // No op
                 return;
             case DAY:
-                final Stream<Map.Entry<Long, List<Row>>> aggregationForDay = rrdQueries.getAggregationForDay(service, now, errorFileLogger);
+                final Stream<Map.Entry<Long, List<Row>>> aggregationForDay = rrdQueries.getAggregationForDay(service, now);
                 final List<AggregatedRow> aggregatedRowsForDay = groupByIdMetric(aggregationForDay);
                 final List<ResultSetFuture> resultSetFuturesForDay = asyncInsertAggregatedValues(aggregatedRowsForDay, service);
                 throttleAsyncInsert(resultSetFuturesForDay, service, aggregatedRowsForDay.size());
                 return;
             case WEEK:
-                final Stream<Map.Entry<Long, List<Row>>> aggregationForWeek = rrdQueries.getAggregationForWeek(service, now, errorFileLogger);
+                final Stream<Map.Entry<Long, List<Row>>> aggregationForWeek = rrdQueries.getAggregationForWeek(service, now);
                 final List<AggregatedRow> aggregatedRowsForWeek = groupByIdMetric(aggregationForWeek);
                 final List<ResultSetFuture> resultSetFuturesForWeek = asyncInsertAggregatedValues(aggregatedRowsForWeek, service);
                 throttleAsyncInsert(resultSetFuturesForWeek, service, aggregatedRowsForWeek.size());
                 return;
             case MONTH:
-                final Stream<Map.Entry<Long, List<Row>>> aggregationForMonth = rrdQueries.getAggregationForMonth(service, now, errorFileLogger);
+                final Stream<Map.Entry<Long, List<Row>>> aggregationForMonth = rrdQueries.getAggregationForMonth(service, now);
                 final List<AggregatedRow> aggregatedRowsForMonth = groupByIdMetric(aggregationForMonth);
                 final List<ResultSetFuture> resultSetFuturesForMonth = asyncInsertAggregatedValues(aggregatedRowsForMonth, service);
                 throttleAsyncInsert(resultSetFuturesForMonth, service, aggregatedRowsForMonth.size());

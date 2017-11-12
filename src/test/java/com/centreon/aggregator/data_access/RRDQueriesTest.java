@@ -27,17 +27,6 @@ import com.datastax.driver.core.Row;
 
 public class RRDQueriesTest extends AbstractCassandraTest {
 
-    private static final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    private static final ErrorFileLogger errorFileLogger;
-
-    static {
-        try {
-            errorFileLogger = new ErrorFileLogger(new PrintWriter(baos));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @After
     public void cleanup() {
         SESSION.execute("TRUNCATE centreon.rrd_aggregated");
@@ -46,8 +35,6 @@ public class RRDQueriesTest extends AbstractCassandraTest {
     @Test
     public void should_get_aggregation_for_day() throws Exception {
         //Given
-        final ErrorFileLogger errorFileLogger = new ErrorFileLogger(new PrintWriter(baos));
-
         final int idMetric1 = RandomUtils.nextInt(0, Integer.MAX_VALUE);
         final int idMetric2 = idMetric1 + 1;
         final int idMetric3 = idMetric2 + 1;
@@ -75,7 +62,7 @@ public class RRDQueriesTest extends AbstractCassandraTest {
         SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/RRDQueries/insert_data_for_hour.cql", params);
 
         //When
-        final Stream<Map.Entry<Long, List<Row>>> aggregationForDay = RRD_QUERIES.getAggregationForDay(service, now1, errorFileLogger);
+        final Stream<Map.Entry<Long, List<Row>>> aggregationForDay = RRD_QUERIES.getAggregationForDay(service, now1);
         final Map<Long, List<Row>> results = aggregationForDay.collect(
                 Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
@@ -142,7 +129,7 @@ public class RRDQueriesTest extends AbstractCassandraTest {
         SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/RRDQueries/insert_data_for_day.cql", params);
 
         //When
-        final Stream<Map.Entry<Long, List<Row>>> aggregationForWeek = RRD_QUERIES.getAggregationForWeek(service, now1, errorFileLogger);
+        final Stream<Map.Entry<Long, List<Row>>> aggregationForWeek = RRD_QUERIES.getAggregationForWeek(service, now1);
 
         final Map<Long, List<Row>> results = aggregationForWeek.collect(
                 Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -212,7 +199,7 @@ public class RRDQueriesTest extends AbstractCassandraTest {
         SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/RRDQueries/insert_data_for_day.cql", params);
 
         //When
-        final Stream<Map.Entry<Long, List<Row>>> aggregationForMonth = RRD_QUERIES.getAggregationForMonth(service, now1, errorFileLogger);
+        final Stream<Map.Entry<Long, List<Row>>> aggregationForMonth = RRD_QUERIES.getAggregationForMonth(service, now1);
 
         final Map<Long, List<Row>> results = aggregationForMonth.collect(
                 Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));

@@ -57,11 +57,14 @@ public class RRDQueries {
 
     private final PreparedStatement GENERIC_SELECT_AGGREGATE_PS;
     private final PreparedStatement GENERIC_INSERT_AGGREGATE_PS;
+    private final ErrorFileLogger errorFileLogger;
     private final Session session;
 
     public RRDQueries(@Autowired Session session,
-                      @Autowired DSETopology dseTopology) {
+                      @Autowired DSETopology dseTopology,
+                      @Autowired ErrorFileLogger errorFileLogger) {
         LOGGER.info("Start preparing queries");
+        this.errorFileLogger = errorFileLogger;
         this.session = session;
         this.GENERIC_SELECT_AGGREGATE_PS = this.session.prepare(new SimpleStatement(
                 String.format(GENERIC_SELECT_AGGREGATE, dseTopology.keyspace)));
@@ -70,21 +73,21 @@ public class RRDQueries {
     }
 
 
-    public Stream<Map.Entry<Long, List<Row>>> getAggregationForDay(UUID service, LocalDateTime now, ErrorFileLogger errorFileLogger) {
+    public Stream<Map.Entry<Long, List<Row>>> getAggregationForDay(UUID service, LocalDateTime now) {
         return transformResultSetFutures(IntStream.range(0, 24)
                 .mapToObj(hour -> now.withHour(hour))
                 .map(hour -> HOUR.toLongFormat(hour)), service, DAY, errorFileLogger);
 
     }
 
-    public Stream<Map.Entry<Long, List<Row>>> getAggregationForWeek(UUID service, LocalDateTime now, ErrorFileLogger errorFileLogger) {
+    public Stream<Map.Entry<Long, List<Row>>> getAggregationForWeek(UUID service, LocalDateTime now) {
         final LocalDateTime firstDayOfWeek = now.with(DayOfWeek.MONDAY);
         return transformResultSetFutures(IntStream.range(0, 6)
                 .mapToObj(increment -> firstDayOfWeek.plusDays(increment))
                 .map(day -> DAY.toLongFormat(day)), service, WEEK, errorFileLogger);
     }
 
-    public Stream<Map.Entry<Long, List<Row>>> getAggregationForMonth(UUID service, LocalDateTime now, ErrorFileLogger errorFileLogger) {
+    public Stream<Map.Entry<Long, List<Row>>> getAggregationForMonth(UUID service, LocalDateTime now) {
         return transformResultSetFutures(IntStream.range(1, 31)
                 .mapToObj(day -> now.withDayOfMonth(day))
                 .map(day -> DAY.toLongFormat(day)), service, MONTH, errorFileLogger);
