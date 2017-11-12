@@ -1,8 +1,7 @@
-package com.centreon.aggregator.service;
+package com.centreon.aggregator.service.rrd;
 
-import static com.centreon.aggregator.async.FutureUtils.toCompletableFuture;
 import static com.centreon.aggregator.configuration.EnvParams.*;
-import static com.centreon.aggregator.service.AggregationUnit.UTC_ZONE;
+import static com.centreon.aggregator.service.common.AggregationUnit.UTC_ZONE;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -16,14 +15,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
-import com.centreon.aggregator.data_access.MetaDataQueries;
-import com.centreon.aggregator.data_access.RRDQueries;
+import com.centreon.aggregator.repository.MetaDataQueries;
+import com.centreon.aggregator.repository.RRDQueries;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
+import com.centreon.aggregator.service.common.AggregationUnit;
 
 @Service
-public class AggregationService {
+public class RrdAggregationService {
 
-    static final private Logger LOGGER = LoggerFactory.getLogger(AggregationService.class);
+    static final private Logger LOGGER = LoggerFactory.getLogger(RrdAggregationService.class);
 
     private final Environment env;
     private final MetaDataQueries metaDataQueries;
@@ -35,11 +35,11 @@ public class AggregationService {
 
 
 
-    public AggregationService(@Autowired Environment env,
-                              @Autowired MetaDataQueries metaDataQueries,
-                              @Autowired RRDQueries rrdQueries,
-                              @Autowired ThreadPoolExecutor executorService,
-                              @Autowired ErrorFileLogger errorFileLogger) {
+    public RrdAggregationService(@Autowired Environment env,
+                                 @Autowired MetaDataQueries metaDataQueries,
+                                 @Autowired RRDQueries rrdQueries,
+                                 @Autowired ThreadPoolExecutor executorService,
+                                 @Autowired ErrorFileLogger errorFileLogger) {
 
         this.env = env;
         this.serviceBatchSize = Integer.parseInt(env.getProperty(SERVICE_BATCH_SIZE, SERVICE_BATCH_SIZE_DEFAULT));
@@ -74,7 +74,7 @@ public class AggregationService {
 
         if (services.size() > 0) {
             LOGGER.info("Execute synchronously last aggregation task");
-            new AggregationTask(env, rrdQueries, errorFileLogger,
+            new RrdAggregationTask(env, rrdQueries, errorFileLogger,
                     new ArrayList(services), aggregationUnit, now, counter,
                     progressCounter).run();
         }
@@ -99,7 +99,7 @@ public class AggregationService {
         }
 
         executorService.submit(
-                new AggregationTask(env, rrdQueries, errorFileLogger,
+                new RrdAggregationTask(env, rrdQueries, errorFileLogger,
                         new ArrayList(services), aggregationUnit, now, counter,
                         progressCounter));
     }

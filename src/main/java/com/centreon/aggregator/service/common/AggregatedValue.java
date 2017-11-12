@@ -1,4 +1,4 @@
-package com.centreon.aggregator.service;
+package com.centreon.aggregator.service.common;
 
 import java.util.function.BiFunction;
 

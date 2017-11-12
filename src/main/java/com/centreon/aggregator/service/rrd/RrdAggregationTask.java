@@ -1,4 +1,4 @@
-package com.centreon.aggregator.service;
+package com.centreon.aggregator.service.rrd;
 
 import static com.centreon.aggregator.configuration.EnvParams.*;
 import static java.util.stream.Collectors.*;
@@ -13,14 +13,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 
-import com.centreon.aggregator.data_access.RRDQueries;
+import com.centreon.aggregator.repository.RRDQueries;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
+import com.centreon.aggregator.service.common.AggregatedRow;
+import com.centreon.aggregator.service.common.AggregatedValue;
+import com.centreon.aggregator.service.common.AggregationUnit;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 
-public class AggregationTask implements Runnable {
+public class RrdAggregationTask implements Runnable {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AggregationTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RrdAggregationTask.class);
 
     private final RRDQueries rrdQueries;
     private final ErrorFileLogger errorFileLogger;
@@ -34,9 +37,9 @@ public class AggregationTask implements Runnable {
     private final int progressCount;
 
 
-    public AggregationTask(Environment env, RRDQueries rrdQueries, ErrorFileLogger errorFileLogger,
-                           List<UUID> serviceRange, AggregationUnit aggregationUnit, LocalDateTime now,
-                           AtomicInteger counter, AtomicInteger progressCounter) {
+    public RrdAggregationTask(Environment env, RRDQueries rrdQueries, ErrorFileLogger errorFileLogger,
+                              List<UUID> serviceRange, AggregationUnit aggregationUnit, LocalDateTime now,
+                              AtomicInteger counter, AtomicInteger progressCounter) {
         this.asyncBatchSize = Integer.parseInt(env.getProperty(ASYNC_BATCH_SIZE, ASYNC_BATCH_SIZE_DEFAULT));
         this.asyncBatchSleepInMillis = Integer.parseInt(env.getProperty(ASYNC_BATCH_SLEEP_MILLIS, ASYNC_BATCH_SLEEP_MILLIS_DEFAULT));
         this.progressCount = asyncBatchSize * Integer.parseInt(env.getProperty(INSERT_PROGRESS_DISPLAY_MULTIPLIER, INSERT_PROGRESS_DISPLAY_MULTIPLIER_DEFAULT));

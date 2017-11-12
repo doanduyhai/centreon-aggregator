@@ -1,4 +1,4 @@
-package com.centreon.aggregator.data_access;
+package com.centreon.aggregator.repository;
 
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.*;
@@ -9,11 +9,6 @@ import java.util.UUID;
 import org.junit.Test;
 
 import com.centreon.aggregator.AbstractCassandraTest;
-import com.centreon.aggregator.configuration.CassandraConfiguration.DSETopology;
-import com.datastax.driver.core.Session;
-
-import info.archinnov.achilles.embedded.CassandraEmbeddedServerBuilder;
-import info.archinnov.achilles.script.ScriptExecutor;
 
 
 public class MetaDataQueriesTest extends AbstractCassandraTest  {

@@ -1,4 +1,4 @@
-package com.centreon.aggregator.service;
+package com.centreon.aggregator.service.common;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -6,7 +6,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import com.centreon.aggregator.service.common.AggregatedValue;
 
 
 public class AggregatedValueTest {

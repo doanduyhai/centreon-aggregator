@@ -1,12 +1,9 @@
-package com.centreon.aggregator.data_access;
+package com.centreon.aggregator.repository;
 
-import static com.centreon.aggregator.service.AggregationUnit.*;
+import static com.centreon.aggregator.service.common.AggregationUnit.*;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -17,10 +14,9 @@ import org.junit.After;
 import org.junit.Test;
 
 import com.centreon.aggregator.AbstractCassandraTest;
-import com.centreon.aggregator.error_handling.ErrorFileLogger;
-import com.centreon.aggregator.service.AggregatedRow;
-import com.centreon.aggregator.service.AggregatedValue;
-import com.centreon.aggregator.service.AggregationUnit;
+import com.centreon.aggregator.service.common.AggregatedRow;
+import com.centreon.aggregator.service.common.AggregatedValue;
+import com.centreon.aggregator.service.common.AggregationUnit;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 

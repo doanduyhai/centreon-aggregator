@@ -1,7 +1,7 @@
 package com.centreon.aggregator;
 
 
-import static com.centreon.aggregator.service.AggregationUnit.*;
+import static com.centreon.aggregator.service.common.AggregationUnit.*;
 
 import java.io.PrintStream;
 import java.time.DayOfWeek;
@@ -18,8 +18,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
 
-import com.centreon.aggregator.service.AggregationService;
-import com.centreon.aggregator.service.AggregationUnit;
+import com.centreon.aggregator.service.rrd.RrdAggregationService;
+import com.centreon.aggregator.service.common.AggregationUnit;
 
 @SpringBootApplication
 public class AggregatorApplication {
@@ -40,7 +40,7 @@ public class AggregatorApplication {
                 final AggregationUnit aggregationUnit = AggregationUnit.valueOf(args[2].trim());
                 final String timeUnitValue = args[3].trim();
                 final Optional<LocalDateTime> now = parseTimeUnit(applicationContext, aggregationUnit, timeUnitValue);
-                final AggregationService aggregationService = applicationContext.getBean(AggregationService.class);
+                final RrdAggregationService aggregationService = applicationContext.getBean(RrdAggregationService.class);
                 LOGGER.info("Start aggregation metrics for {} {}", aggregationUnit.name(), timeUnitValue);
                 aggregationService.aggregate(aggregationUnit, now);
                 applicationContext.close();

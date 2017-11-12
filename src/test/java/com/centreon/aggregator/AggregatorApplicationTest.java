@@ -1,6 +1,6 @@
 package com.centreon.aggregator;
 
-import static com.centreon.aggregator.service.AggregationUnit.*;
+import static com.centreon.aggregator.service.common.AggregationUnit.*;
 import static org.assertj.core.api.Assertions.*;
 
 import java.time.LocalDateTime;
@@ -15,9 +15,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
 
-import info.archinnov.achilles.embedded.CassandraEmbeddedServerBuilder;
 import info.archinnov.achilles.script.ScriptExecutor;
 
 

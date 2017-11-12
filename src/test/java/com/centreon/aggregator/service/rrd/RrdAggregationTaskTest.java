@@ -1,9 +1,9 @@
-package com.centreon.aggregator.service;
+package com.centreon.aggregator.service.rrd;
 
 import static com.centreon.aggregator.configuration.EnvParams.ASYNC_BATCH_SIZE;
 import static com.centreon.aggregator.configuration.EnvParams.ASYNC_BATCH_SLEEP_MILLIS;
 import static com.centreon.aggregator.configuration.EnvParams.INSERT_PROGRESS_DISPLAY_MULTIPLIER;
-import static com.centreon.aggregator.service.AggregationUnit.*;
+import static com.centreon.aggregator.service.common.AggregationUnit.*;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.*;
 
@@ -21,9 +21,10 @@ import org.springframework.core.env.Environment;
 
 import com.centreon.aggregator.AbstractCassandraTest;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
+import com.centreon.aggregator.service.FakeEnv;
 import com.datastax.driver.core.Row;
 
-public class AggregationTaskTest extends AbstractCassandraTest {
+public class RrdAggregationTaskTest extends AbstractCassandraTest {
 
 
     private static final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -86,9 +87,9 @@ public class AggregationTaskTest extends AbstractCassandraTest {
         params.put("tick14", SECOND_FORMATTER.format(now1.plusMinutes(25)));
         params.put("tick15", SECOND_FORMATTER.format(now1.plusMinutes(47)));
 
-        SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/AggregationTask/insert_data_for_hour.cql", params);
+        SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/RrdAggregationTask/insert_data_for_hour.cql", params);
 
-        final AggregationTask aggregationTask = new AggregationTask(env, RRD_QUERIES, errorFileLogger, Arrays.asList(service1, service2, service3),
+        final RrdAggregationTask aggregationTask = new RrdAggregationTask(env, RRD_QUERIES, errorFileLogger, Arrays.asList(service1, service2, service3),
                 DAY, now1, counter, progressCounter);
 
         //When
@@ -146,9 +147,9 @@ public class AggregationTaskTest extends AbstractCassandraTest {
         params.put("tick14", SECOND_FORMATTER.format(now1.plusHours(3)));
         params.put("tick15", SECOND_FORMATTER.format(now1.plusHours(4)));
 
-        SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/AggregationTask/insert_data_for_day.cql", params);
+        SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/RrdAggregationTask/insert_data_for_day.cql", params);
 
-        final AggregationTask aggregationTask = new AggregationTask(env, RRD_QUERIES, errorFileLogger,
+        final RrdAggregationTask aggregationTask = new RrdAggregationTask(env, RRD_QUERIES, errorFileLogger,
                 Arrays.asList(service1, service2, service3), WEEK, now1, counter, progressCounter);
 
 
@@ -212,9 +213,9 @@ public class AggregationTaskTest extends AbstractCassandraTest {
         params.put("tick14", SECOND_FORMATTER.format(now1.plusHours(3)));
         params.put("tick15", SECOND_FORMATTER.format(now1.plusHours(4)));
 
-        SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/AggregationTask/insert_data_for_day.cql", params);
+        SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/RrdAggregationTask/insert_data_for_day.cql", params);
 
-        final AggregationTask aggregationTask = new AggregationTask(env, RRD_QUERIES, errorFileLogger,
+        final RrdAggregationTask aggregationTask = new RrdAggregationTask(env, RRD_QUERIES, errorFileLogger,
                 Arrays.asList(service1,service2,service3), MONTH, now1, counter, progressCounter);
 
         //When

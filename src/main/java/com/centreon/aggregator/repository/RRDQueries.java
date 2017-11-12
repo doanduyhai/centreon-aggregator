@@ -1,16 +1,14 @@
-package com.centreon.aggregator.data_access;
+package com.centreon.aggregator.repository;
 
-import static com.centreon.aggregator.service.AggregationUnit.*;
+import static com.centreon.aggregator.service.common.AggregationUnit.*;
 import static com.google.common.collect.Maps.immutableEntry;
 import static java.util.stream.Collectors.reducing;
-import static java.util.stream.Collectors.toList;
 
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -21,10 +19,9 @@ import org.springframework.stereotype.Repository;
 
 import com.centreon.aggregator.configuration.CassandraConfiguration.DSETopology;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
-import com.centreon.aggregator.service.AggregatedRow;
-import com.centreon.aggregator.service.AggregationUnit;
+import com.centreon.aggregator.service.common.AggregatedRow;
+import com.centreon.aggregator.service.common.AggregationUnit;
 import com.datastax.driver.core.*;
-import com.google.common.util.concurrent.Futures;
 
 /**
  *   CREATE TABLE IF NOT EXISTS centreon.rrd_aggregated(

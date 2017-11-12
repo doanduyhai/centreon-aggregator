@@ -1,4 +1,4 @@
-package com.centreon.aggregator.data_access;
+package com.centreon.aggregator.repository;
 
 import static java.lang.String.format;
 

@@ -1,11 +1,9 @@
-package com.centreon.aggregator.service;
+package com.centreon.aggregator.service.common;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalField;
 
 
 public enum  AggregationUnit {

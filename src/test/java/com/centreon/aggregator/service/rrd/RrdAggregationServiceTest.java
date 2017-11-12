@@ -1,12 +1,11 @@
-package com.centreon.aggregator.service;
+package com.centreon.aggregator.service.rrd;
 
 import static com.centreon.aggregator.configuration.EnvParams.*;
-import static com.centreon.aggregator.service.AggregationUnit.DAY;
+import static com.centreon.aggregator.service.common.AggregationUnit.DAY;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.*;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -16,12 +15,14 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.core.env.Environment;
 
-import com.centreon.aggregator.data_access.MetaDataQueries;
-import com.centreon.aggregator.data_access.RRDQueries;
+import com.centreon.aggregator.repository.MetaDataQueries;
+import com.centreon.aggregator.repository.RRDQueries;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
+import com.centreon.aggregator.service.FakeEnv;
+import com.centreon.aggregator.service.FakeExecutorService;
 
 @RunWith(MockitoJUnitRunner.class)
-public class AggregationServiceTest {
+public class RrdAggregationServiceTest {
 
     @Mock
     private MetaDataQueries metaDataQueries;
@@ -32,12 +33,12 @@ public class AggregationServiceTest {
     @Mock
     private ErrorFileLogger errorFileLogger;
 
-    private List<AggregationTask> tasks = new ArrayList<>();
+    private List<RrdAggregationTask> tasks = new ArrayList<>();
 
     private ThreadPoolExecutor executorService = new FakeExecutorService() {
         @Override
         public Future<?> submit(Runnable task) {
-            tasks.add((AggregationTask)task);
+            tasks.add((RrdAggregationTask)task);
             return null;
         }
 
@@ -66,7 +67,7 @@ public class AggregationServiceTest {
         final List<UUID> services = Arrays.asList(service1, service2, service3, service4);
         when(metaDataQueries.getDistinctServicesStream()).thenReturn(services.stream());
 
-        final AggregationService aggregationService = new AggregationService(env, metaDataQueries,
+        final RrdAggregationService aggregationService = new RrdAggregationService(env, metaDataQueries,
                 rrdQueries, executorService, errorFileLogger);
 
         //When

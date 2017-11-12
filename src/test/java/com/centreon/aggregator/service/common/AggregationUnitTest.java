@@ -1,6 +1,6 @@
-package com.centreon.aggregator.service;
+package com.centreon.aggregator.service.common;
 
-import static com.centreon.aggregator.service.AggregationUnit.*;
+import static com.centreon.aggregator.service.common.AggregationUnit.*;
 import static org.assertj.core.api.Assertions.*;
 
 import java.time.LocalDateTime;

@@ -1,4 +1,4 @@
-package com.centreon.aggregator.service;
+package com.centreon.aggregator.service.common;
 
 public class AggregatedRow {
 

@@ -1,6 +1,6 @@
 package com.centreon.aggregator;
 
-import static com.centreon.aggregator.service.AggregationUnit.UTC_ZONE;
+import static com.centreon.aggregator.service.common.AggregationUnit.UTC_ZONE;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -11,7 +11,7 @@ import java.util.Calendar;
 import java.util.TimeZone;
 
 import com.centreon.aggregator.configuration.CassandraConfiguration;
-import com.centreon.aggregator.data_access.RRDQueries;
+import com.centreon.aggregator.repository.RRDQueries;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
 
 import info.archinnov.achilles.script.ScriptExecutor;
