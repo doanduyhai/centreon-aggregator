@@ -2,6 +2,8 @@ package com.centreon.aggregator;
 
 
 import static com.centreon.aggregator.service.common.AggregationUnit.*;
+import static com.centreon.aggregator.service.common.TargetSystem.ANALYTICS;
+import static com.centreon.aggregator.service.common.TargetSystem.RRD;
 
 import java.io.PrintStream;
 import java.time.DayOfWeek;
@@ -18,6 +20,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
 
+import com.centreon.aggregator.service.analytics.AnalyticsAggregationService;
+import com.centreon.aggregator.service.common.TargetSystem;
 import com.centreon.aggregator.service.rrd.RrdAggregationService;
 import com.centreon.aggregator.service.common.AggregationUnit;
 
@@ -32,17 +36,25 @@ public class AggregatorApplication {
                 .sources(AggregatorApplication.class)
                 .run(args);
 
-        if (args.length != 4) {
+        if (args.length != 5) {
             displayUsage(applicationContext);
         } else {
             final boolean ok = checkArgs(args, applicationContext);
             if (ok) {
-                final AggregationUnit aggregationUnit = AggregationUnit.valueOf(args[2].trim());
-                final String timeUnitValue = args[3].trim();
+                final TargetSystem targetSystem = TargetSystem.valueOf(args[2].trim());
+                final AggregationUnit aggregationUnit = AggregationUnit.valueOf(args[3].trim());
+                final String timeUnitValue = args[4].trim();
                 final Optional<LocalDateTime> now = parseTimeUnit(applicationContext, aggregationUnit, timeUnitValue);
-                final RrdAggregationService aggregationService = applicationContext.getBean(RrdAggregationService.class);
                 LOGGER.info("Start aggregation metrics for {} {}", aggregationUnit.name(), timeUnitValue);
-                aggregationService.aggregate(aggregationUnit, now);
+
+                if (targetSystem == RRD) {
+                    final RrdAggregationService rrdAggregationService = applicationContext.getBean(RrdAggregationService.class);
+                    rrdAggregationService.aggregate(aggregationUnit, now);
+
+                } else {
+                    final AnalyticsAggregationService analyticsAggregationService = applicationContext.getBean(AnalyticsAggregationService.class);
+                    analyticsAggregationService.aggregate(aggregationUnit, now);
+                }
                 applicationContext.close();
             }
         }
@@ -84,8 +96,15 @@ public class AggregatorApplication {
 
 
     public static boolean checkArgs(String[] args, ConfigurableApplicationContext applicationContext) {
-        final String aggregationUnit = args[2].trim();
-        final String timeUnitValue = args[3].trim();
+        final String targetSystem = args[2].trim();
+        final String aggregationUnit = args[3].trim();
+        final String timeUnitValue = args[4].trim();
+
+        if (!RRD.name().equalsIgnoreCase(targetSystem) && !ANALYTICS.name().equalsIgnoreCase(targetSystem)) {
+            displayUsage(applicationContext);
+            return false;
+        }
+
         if (!DAY.name().equalsIgnoreCase(aggregationUnit)
                 && !WEEK.name().equalsIgnoreCase(aggregationUnit)
                 && !MONTH.name().equalsIgnoreCase(aggregationUnit)) {
@@ -124,14 +143,18 @@ public class AggregatorApplication {
         builder.append("\n");
         builder.append("******************************************\n");
         builder.append("\n");
-        builder.append("Usage: java -jar aggregator-package-<version>.jar -Dlogback.configurationFile=file:///<path_to_logback.xml> --spring.config.location=file:///<path_to_application.properties> <aggregation_unit> <time_unit_value>\n");
+        builder.append("Usage: java -jar aggregator-package-<version>.jar \n");
+        builder.append("\t\t -Dlogback.configurationFile=file:///<path_to_logback.xml> \n);");
+        builder.append("\t\t --spring.config.location=file:///<path_to_application.properties> \n");
+        builder.append("\t\t <target_system> <aggregation_unit> <time_unit_value> \n");
         builder.append("\n");
         builder.append("where: \n");
         builder.append("\n");
-        builder.append("\t-<aggregation_unit> can be DAY, WEEK or MONTH\n");
+        builder.append("\t-<target_system> can be either RRD or ANALYTICS \n");
+        builder.append("\t-<aggregation_unit> can be DAY, WEEK or MONTH \n");
         builder.append("\t-<time_unit_value> is of form :\n");
-        builder.append("\t\t-yyyyMMdd for DAY and WEEK\n");
-        builder.append("\t\t-yyyyMM for MONTH\n");
+        builder.append("\t\t-yyyyMMdd for DAY and WEEK \n");
+        builder.append("\t\t-yyyyMM for MONTH \n");
         builder.append("\n");
         builder.append("Please note that for aggregation_unit WEEK, you can input any day of the week, the aggregator will automatically take the first day of the corresponding week\n");
         builder.append("\n");

@@ -47,7 +47,7 @@ public class RrdAggregationServiceTest {
     private static final Environment env = new FakeEnv() {
         @Override
         public String getProperty(String key, String defaultValue) {
-            if (key.equals(SERVICE_BATCH_SIZE)) {
+            if (key.equals(AGGREGATION_BATCH_SIZE)) {
                 return "2";
             } else {
                 return "1";

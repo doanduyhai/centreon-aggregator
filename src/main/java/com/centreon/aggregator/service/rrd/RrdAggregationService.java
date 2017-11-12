@@ -28,7 +28,7 @@ public class RrdAggregationService {
     private final Environment env;
     private final MetaDataQueries metaDataQueries;
     private final RRDQueries rrdQueries;
-    private final int serviceBatchSize;
+    private final int aggregationBatchSize;
     private final int threadPoolQueueSize;
     private final ThreadPoolExecutor executorService;
     private final ErrorFileLogger errorFileLogger;
@@ -42,7 +42,7 @@ public class RrdAggregationService {
                                  @Autowired ErrorFileLogger errorFileLogger) {
 
         this.env = env;
-        this.serviceBatchSize = Integer.parseInt(env.getProperty(SERVICE_BATCH_SIZE, SERVICE_BATCH_SIZE_DEFAULT));
+        this.aggregationBatchSize = Integer.parseInt(env.getProperty(AGGREGATION_BATCH_SIZE, AGGREGATION_BATCH_SIZE_DEFAULT));
         this.threadPoolQueueSize = Integer.parseInt(env.getProperty(AGGREGATION_THREAD_POOL_QUEUE_SIZE, AGGREGATION_THREAD_POOL_QUEUE_SIZE_DEFAULT));
         this.metaDataQueries = metaDataQueries;
         this.rrdQueries = rrdQueries;
@@ -61,11 +61,11 @@ public class RrdAggregationService {
         final AtomicInteger counter = new AtomicInteger(0);
         final AtomicInteger progressCounter = new AtomicInteger(0);
 
-        List<UUID> services = new ArrayList<>(serviceBatchSize);
+        final List<UUID> services = new ArrayList<>(aggregationBatchSize);
         metaDataQueries.getDistinctServicesStream()
                 .forEach(service -> {
                     services.add(service);
-                    if (services.size() == serviceBatchSize) {
+                    if (services.size() == aggregationBatchSize) {
                         LOGGER.info("Enqueuing new aggregation task");
                         enqueueAggregationTask(aggregationUnit, now, counter, progressCounter, new ArrayList<>(services));
                         services.clear();
@@ -97,9 +97,7 @@ public class RrdAggregationService {
             }
 
         }
-
-        executorService.submit(
-                new RrdAggregationTask(env, rrdQueries, errorFileLogger,
+        executorService.submit(new RrdAggregationTask(env, rrdQueries, errorFileLogger,
                         new ArrayList(services), aggregationUnit, now, counter,
                         progressCounter));
     }

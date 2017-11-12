@@ -42,8 +42,8 @@ public interface EnvParams {
     String AGGREGATION_THREAD_POOL_QUEUE_SIZE = "dse.threadpool_queue_size";
     String AGGREGATION_THREAD_POOL_QUEUE_SIZE_DEFAULT = "10";
 
-    String SERVICE_BATCH_SIZE = "dse.service_batch_size";
-    String SERVICE_BATCH_SIZE_DEFAULT = "100";
+    String AGGREGATION_BATCH_SIZE = "dse.aggregation_batch_size";
+    String AGGREGATION_BATCH_SIZE_DEFAULT = "100";
 
     String ASYNC_BATCH_SIZE = "dse.async_batch_size";
     String ASYNC_BATCH_SIZE_DEFAULT = "100";

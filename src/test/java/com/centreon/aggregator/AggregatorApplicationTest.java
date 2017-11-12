@@ -33,11 +33,22 @@ public class AggregatorApplicationTest extends AbstractEmbeddedCassandra {
     }
 
     @Test
+    public void should_return_if_wrong_target_system() throws Exception {
+        //Given
+
+        //When
+        final boolean result = AggregatorApplication.checkArgs(new String[]{"", "", "TEST", "HOUR", "2014"}, applicationContext);
+
+        //Then
+        assertThat(result).isFalse();
+    }
+
+    @Test
     public void should_return_if_wrong_aggregation_unit() throws Exception {
         //Given
 
         //When
-        final boolean result = AggregatorApplication.checkArgs(new String[]{"", "", "HOUR", "2014"}, applicationContext);
+        final boolean result = AggregatorApplication.checkArgs(new String[]{"", "", "RRD", "HOUR", "2014"}, applicationContext);
 
         //Then
         assertThat(result).isFalse();
@@ -48,7 +59,7 @@ public class AggregatorApplicationTest extends AbstractEmbeddedCassandra {
         //Given
 
         //When
-        final boolean result = AggregatorApplication.checkArgs(new String[]{"", "", "DAY", "2014"}, applicationContext);
+        final boolean result = AggregatorApplication.checkArgs(new String[]{"", "", "RRD", "DAY", "2014"}, applicationContext);
 
         //Then
         assertThat(result).isFalse();
@@ -59,7 +70,7 @@ public class AggregatorApplicationTest extends AbstractEmbeddedCassandra {
         //Given
 
         //When
-        final boolean result = AggregatorApplication.checkArgs(new String[]{"", "", "DAY", "20141235"}, applicationContext);
+        final boolean result = AggregatorApplication.checkArgs(new String[]{"", "", "RRD", "DAY", "20141235"}, applicationContext);
 
         //Then
         assertThat(result).isFalse();
@@ -133,7 +144,7 @@ public class AggregatorApplicationTest extends AbstractEmbeddedCassandra {
         final String nativePortOverride = "--dse.native_port=" +randomizedPort;
 
         //When
-        application.main(new String[]{nativePortOverride, "", "DAY", "20160116"});
+        application.main(new String[]{nativePortOverride, "", "RRD", "DAY", "20160116"});
 
         //Then
         final Row found = SESSION.execute("SELECT * FROM centreon.rrd_aggregated WHERE " +
