@@ -23,6 +23,8 @@ import com.datastax.driver.core.Row;
 
 public class RRDQueriesTest extends AbstractCassandraTest {
 
+    private static final RRDQueries RRD_QUERIES = new RRDQueries(SESSION, DSE_TOPOLOGY, ERROR_FILE_LOGGER);
+
     @After
     public void cleanup() {
         SESSION.execute("TRUNCATE centreon.rrd_aggregated");
@@ -234,7 +236,7 @@ public class RRDQueriesTest extends AbstractCassandraTest {
     }
 
     @Test
-    public void should_insert_aggregation_for() throws Exception {
+    public void should_insert_aggregation_for_day() throws Exception {
         //Given
         final int idMetric = RandomUtils.nextInt(0, Integer.MAX_VALUE);
         final UUID service = new UUID(0, idMetric);

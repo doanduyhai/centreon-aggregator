@@ -22,4 +22,3 @@ VALUES(${service}, 'HOUR', ${hour1}, ${id_metric3}, ${tick11}, 10, 10, 10, 1);
 
 INSERT INTO centreon.rrd_aggregated(service, aggregation_unit, time_value, id_metric, previous_time_value, min, max, sum, count)
 VALUES(${service}, 'HOUR', ${hour2}, ${id_metric1}, ${tick21}, 12, 12, 12, 1);
-c

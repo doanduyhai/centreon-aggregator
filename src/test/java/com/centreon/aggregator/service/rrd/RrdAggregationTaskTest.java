@@ -7,9 +7,6 @@ import static com.centreon.aggregator.service.common.AggregationUnit.*;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,32 +17,24 @@ import org.junit.Test;
 import org.springframework.core.env.Environment;
 
 import com.centreon.aggregator.AbstractCassandraTest;
-import com.centreon.aggregator.error_handling.ErrorFileLogger;
+import com.centreon.aggregator.repository.RRDQueries;
 import com.centreon.aggregator.service.FakeEnv;
 import com.datastax.driver.core.Row;
 
 public class RrdAggregationTaskTest extends AbstractCassandraTest {
 
 
-    private static final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    private static final ErrorFileLogger errorFileLogger;
-    private static final AtomicInteger counter = new AtomicInteger(0);
-    private static final AtomicInteger progressCounter = new AtomicInteger(0);
+    private static final RRDQueries RRD_QUERIES = new RRDQueries(SESSION, DSE_TOPOLOGY, ERROR_FILE_LOGGER);
+    private static final AtomicInteger COUNTER = new AtomicInteger(0);
+    private static final AtomicInteger PROGRESS_COUNTER = new AtomicInteger(0);
 
-    static {
-        try {
-            errorFileLogger = new ErrorFileLogger(new PrintWriter(baos));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     @After
     public void cleanup() {
         SESSION.execute("TRUNCATE centreon.rrd_aggregated");
     }
 
-    private static final Environment env = new FakeEnv() {
+    private static final Environment ENV = new FakeEnv() {
         @Override
         public String getProperty(String key, String defaultValue) {
             if (key.equals(ASYNC_BATCH_SIZE)) {
@@ -64,8 +53,6 @@ public class RrdAggregationTaskTest extends AbstractCassandraTest {
     @Test
     public void should_aggregate_for_day() throws Exception {
         //Given
-        final ErrorFileLogger errorFileLogger = new ErrorFileLogger(new PrintWriter(baos));
-
         final int idMetric1 = RandomUtils.nextInt(0, Integer.MAX_VALUE);
         final int idMetric2 = idMetric1 + 1;
         final int idMetric3 = idMetric2 + 1;
@@ -89,8 +76,8 @@ public class RrdAggregationTaskTest extends AbstractCassandraTest {
 
         SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/RrdAggregationTask/insert_data_for_hour.cql", params);
 
-        final RrdAggregationTask aggregationTask = new RrdAggregationTask(env, RRD_QUERIES, errorFileLogger, Arrays.asList(service1, service2, service3),
-                DAY, now1, counter, progressCounter);
+        final RrdAggregationTask aggregationTask = new RrdAggregationTask(ENV, RRD_QUERIES, ERROR_FILE_LOGGER, Arrays.asList(service1, service2, service3),
+                DAY, now1, COUNTER, PROGRESS_COUNTER);
 
         //When
         aggregationTask.run();
@@ -149,8 +136,8 @@ public class RrdAggregationTaskTest extends AbstractCassandraTest {
 
         SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/RrdAggregationTask/insert_data_for_day.cql", params);
 
-        final RrdAggregationTask aggregationTask = new RrdAggregationTask(env, RRD_QUERIES, errorFileLogger,
-                Arrays.asList(service1, service2, service3), WEEK, now1, counter, progressCounter);
+        final RrdAggregationTask aggregationTask = new RrdAggregationTask(ENV, RRD_QUERIES, ERROR_FILE_LOGGER,
+                Arrays.asList(service1, service2, service3), WEEK, now1, COUNTER, PROGRESS_COUNTER);
 
 
         //When
@@ -215,8 +202,8 @@ public class RrdAggregationTaskTest extends AbstractCassandraTest {
 
         SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/RrdAggregationTask/insert_data_for_day.cql", params);
 
-        final RrdAggregationTask aggregationTask = new RrdAggregationTask(env, RRD_QUERIES, errorFileLogger,
-                Arrays.asList(service1,service2,service3), MONTH, now1, counter, progressCounter);
+        final RrdAggregationTask aggregationTask = new RrdAggregationTask(ENV, RRD_QUERIES, ERROR_FILE_LOGGER,
+                Arrays.asList(service1,service2,service3), MONTH, now1, COUNTER, PROGRESS_COUNTER);
 
         //When
         aggregationTask.run();

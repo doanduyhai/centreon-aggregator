@@ -11,7 +11,6 @@ import java.util.Calendar;
 import java.util.TimeZone;
 
 import com.centreon.aggregator.configuration.CassandraConfiguration;
-import com.centreon.aggregator.repository.RRDQueries;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
 
 import info.archinnov.achilles.script.ScriptExecutor;
@@ -21,17 +20,16 @@ public abstract class AbstractCassandraTest extends AbstractEmbeddedCassandra {
     protected static final ScriptExecutor SCRIPT_EXECUTOR = new ScriptExecutor(SESSION);
     protected static final CassandraConfiguration.DSETopology DSE_TOPOLOGY = new CassandraConfiguration.DSETopology("centreon", "dc1");
     protected static final ByteArrayOutputStream BAOS = new ByteArrayOutputStream();
-    protected static final ErrorFileLogger errorFileLogger;
+    protected static final ErrorFileLogger ERROR_FILE_LOGGER;
 
     static {
         try {
-            errorFileLogger = new ErrorFileLogger(new PrintWriter(BAOS));
+            ERROR_FILE_LOGGER = new ErrorFileLogger(new PrintWriter(BAOS));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    protected static final RRDQueries RRD_QUERIES = new RRDQueries(SESSION, DSE_TOPOLOGY, errorFileLogger);
     protected static final DateTimeFormatter SECOND_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     protected LocalDateTime getLocalDateTimeFromHour(int hour) {

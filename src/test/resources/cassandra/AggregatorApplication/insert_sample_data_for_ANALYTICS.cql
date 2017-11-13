@@ -1,0 +1,11 @@
+INSERT INTO centreon.metric_meta(id_metric) VALUES(3605);
+INSERT INTO centreon.analytics_aggregated(id_metric, aggregation_unit, time_value, previous_time_value, min, max, sum, count) VALUES(3605, 'HOUR', 2016011622, 20160116220410, 19, 19, 19, 1);
+INSERT INTO centreon.analytics_aggregated(id_metric, aggregation_unit, time_value, previous_time_value, min, max, sum, count) VALUES(3605, 'HOUR', 2016011622, 20160116220454, 12, 12, 12, 1);
+INSERT INTO centreon.analytics_aggregated(id_metric, aggregation_unit, time_value, previous_time_value, min, max, sum, count) VALUES(3605, 'HOUR', 2016011622, 20160116220530, 66, 66, 66, 1);
+INSERT INTO centreon.analytics_aggregated(id_metric, aggregation_unit, time_value, previous_time_value, min, max, sum, count) VALUES(3605, 'HOUR', 2016011622, 20160116220644, 77, 77, 77, 1);
+INSERT INTO centreon.analytics_aggregated(id_metric, aggregation_unit, time_value, previous_time_value, min, max, sum, count) VALUES(3605, 'HOUR', 2016011622, 20160116220729, 33, 33, 33, 1);
+INSERT INTO centreon.analytics_aggregated(id_metric, aggregation_unit, time_value, previous_time_value, min, max, sum, count) VALUES(3605, 'HOUR', 2016011622, 20160116220801, 39, 39, 39, 1);
+INSERT INTO centreon.analytics_aggregated(id_metric, aggregation_unit, time_value, previous_time_value, min, max, sum, count) VALUES(3605, 'HOUR', 2016011622, 20160116220819, 24, 24, 24, 1);
+INSERT INTO centreon.analytics_aggregated(id_metric, aggregation_unit, time_value, previous_time_value, min, max, sum, count) VALUES(3605, 'HOUR', 2016011622, 20160116220912, 10, 10, 10, 1);
+INSERT INTO centreon.analytics_aggregated(id_metric, aggregation_unit, time_value, previous_time_value, min, max, sum, count) VALUES(3605, 'HOUR', 2016011622, 20160116220934, 53, 53, 53, 1);
+INSERT INTO centreon.analytics_aggregated(id_metric, aggregation_unit, time_value, previous_time_value, min, max, sum, count) VALUES(3605, 'HOUR', 2016011622, 20160116220936, 40, 40, 40, 1);

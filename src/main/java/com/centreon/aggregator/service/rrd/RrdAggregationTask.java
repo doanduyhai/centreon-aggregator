@@ -14,6 +14,7 @@ import org.springframework.core.env.Environment;
 import com.centreon.aggregator.repository.RRDQueries;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
 import com.centreon.aggregator.service.common.AggregatedRow;
+import com.centreon.aggregator.service.common.AggregatedValue;
 import com.centreon.aggregator.service.common.AggregationTask;
 import com.centreon.aggregator.service.common.AggregationUnit;
 import com.datastax.driver.core.ResultSetFuture;
@@ -78,6 +79,32 @@ public class RrdAggregationTask extends AggregationTask {
                 .collect(toList());
     }
 
+
+    private List<AggregatedRow> groupByIdMetric(Stream<Map.Entry<Long, List<Row>>> entries) {
+        return entries
+                .flatMap(entry -> {
+                    final Long previousTimeValue = entry.getKey();
+                    final Map<Integer, AggregatedValue> groupedByIdMetric = entry.getValue()
+                            .stream()
+                            .filter(row -> !row.isNull("sum"))
+                            .collect(groupingBy(
+                                    row -> row.getInt("id_metric"),
+                                    mapping(row -> {
+                                                Float min = row.isNull("min") ? null: row.getFloat("min");
+                                                Float max = row.isNull("max") ? null: row.getFloat("max");
+                                                Float sum = row.isNull("sum") ? null: row.getFloat("sum");
+                                                int count = row.isNull("count") ? 0: row.getInt("count");
+                                                return new AggregatedValue(min, max, sum, count);
+                                            },
+                                            reducing(AggregatedValue.EMPTY, AggregatedValue::combine))
+                            ));
+
+                    return groupedByIdMetric.entrySet().stream()
+                            .map(groupBY -> new AggregatedRow(groupBY.getKey(), previousTimeValue, groupBY.getValue()));
+                })
+                .collect(toList());
+
+    }
 
 
 }

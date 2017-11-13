@@ -43,32 +43,6 @@ public abstract class AggregationTask implements Runnable {
         this.now = now;
     }
 
-    protected List<AggregatedRow> groupByIdMetric(Stream<Map.Entry<Long, List<Row>>> entries) {
-        return entries
-                .flatMap(entry -> {
-                    final Long previousTimeValue = entry.getKey();
-                    final Map<Integer, AggregatedValue> groupedByIdMetric = entry.getValue()
-                            .stream()
-                            .filter(row -> !row.isNull("sum"))
-                            .collect(groupingBy(
-                                    row -> row.getInt("id_metric"),
-                                    mapping(row -> {
-                                                Float min = row.isNull("min") ? null: row.getFloat("min");
-                                                Float max = row.isNull("max") ? null: row.getFloat("max");
-                                                Float sum = row.isNull("sum") ? null: row.getFloat("sum");
-                                                int count = row.isNull("count") ? 0: row.getInt("count");
-                                                return new AggregatedValue(min, max, sum, count);
-                                            },
-                                            reducing(AggregatedValue.EMPTY, AggregatedValue::combine))
-                            ));
-
-                    return groupedByIdMetric.entrySet().stream()
-                            .map(groupBY -> new AggregatedRow(groupBY.getKey(), previousTimeValue, groupBY.getValue()));
-                })
-                .collect(toList());
-
-    }
-
     protected void throttleAsyncInsert(Logger logger, List<ResultSetFuture> resultSetFutures, String serviceOrMetricId, int rowsToInsertCount) {
         boolean error = false;
         for (ResultSetFuture future : resultSetFutures) {

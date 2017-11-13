@@ -29,7 +29,10 @@ public class AggregatorApplicationTest extends AbstractEmbeddedCassandra {
 
     @After
     public void cleanup() {
+        SESSION.execute("TRUNCATE centreon.service_meta");
+        SESSION.execute("TRUNCATE centreon.metric_meta");
         SESSION.execute("TRUNCATE centreon.rrd_aggregated");
+        SESSION.execute("TRUNCATE centreon.analytics_aggregated");
     }
 
     @Test
@@ -136,9 +139,9 @@ public class AggregatorApplicationTest extends AbstractEmbeddedCassandra {
     }
     
     @Test
-    public void should_bootstrap_application_with_DAY_20160116() throws Exception {
+    public void should_aggregate_RRD_with_DAY_20160116() throws Exception {
         //Given
-        SCRIPT_EXECUTOR.executeScript("cassandra/AggregatorApplication/insert_sample_data.cql");
+        SCRIPT_EXECUTOR.executeScript("cassandra/AggregatorApplication/insert_sample_data_for_RRD.cql");
         final int randomizedPort = SESSION.getCluster().getConfiguration().getProtocolOptions().getPort();
         final AggregatorApplication application = new AggregatorApplication();
         final String nativePortOverride = "--dse.native_port=" +randomizedPort;
@@ -152,6 +155,34 @@ public class AggregatorApplicationTest extends AbstractEmbeddedCassandra {
                 " AND aggregation_unit='DAY' " +
                 " AND time_value=20160116 " +
                 " AND id_metric=3605").one();
+
+        assertThat(found).isNotNull();
+        assertThat(found.getFloat("min")).isEqualTo(10f);
+        assertThat(found.getFloat("max")).isEqualTo(77f);
+
+        // 19 + 12 + 66 + 77 + 33 + 39 + 24 + 10 + 53 + 40 = 373
+        assertThat(found.getFloat("sum")).isEqualTo(373f);
+        assertThat(found.getInt("count")).isEqualTo(10);
+    }
+
+
+    @Test
+    public void should_aggregate_ANALYTICS_with_DAY_20160116() throws Exception {
+        //Given
+        SCRIPT_EXECUTOR.executeScript("cassandra/AggregatorApplication/insert_sample_data_for_ANALYTICS.cql");
+        final int randomizedPort = SESSION.getCluster().getConfiguration().getProtocolOptions().getPort();
+        final AggregatorApplication application = new AggregatorApplication();
+        final String nativePortOverride = "--dse.native_port=" +randomizedPort;
+
+        //When
+        application.main(new String[]{nativePortOverride, "", "ANALYTICS", "DAY", "20160116"});
+
+        //Then
+        final Row found = SESSION.execute("SELECT * FROM centreon.analytics_aggregated WHERE " +
+                " id_metric=3605 " +
+                " AND aggregation_unit='DAY' " +
+                " AND time_value=20160116")
+                .one();
 
         assertThat(found).isNotNull();
         assertThat(found.getFloat("min")).isEqualTo(10f);
