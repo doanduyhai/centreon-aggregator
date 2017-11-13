@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.lang3.RandomUtils;
@@ -44,7 +45,7 @@ public class RrdAggregationTaskTest extends AbstractCassandraTest {
             } else if (key.equals(INSERT_PROGRESS_DISPLAY_MULTIPLIER)) {
                 return "1";
             } else {
-                return null;
+                return "1";
             }
         }
 
@@ -78,6 +79,7 @@ public class RrdAggregationTaskTest extends AbstractCassandraTest {
 
         final RrdAggregationTask aggregationTask = new RrdAggregationTask(ENV, RRD_QUERIES, ERROR_FILE_LOGGER, Arrays.asList(service1, service2, service3),
                 DAY, now1, COUNTER, PROGRESS_COUNTER);
+        aggregationTask.setCountDownLatch(new CountDownLatch(1));
 
         //When
         aggregationTask.run();
@@ -138,7 +140,7 @@ public class RrdAggregationTaskTest extends AbstractCassandraTest {
 
         final RrdAggregationTask aggregationTask = new RrdAggregationTask(ENV, RRD_QUERIES, ERROR_FILE_LOGGER,
                 Arrays.asList(service1, service2, service3), WEEK, now1, COUNTER, PROGRESS_COUNTER);
-
+        aggregationTask.setCountDownLatch(new CountDownLatch(1));
 
         //When
         aggregationTask.run();
@@ -204,6 +206,7 @@ public class RrdAggregationTaskTest extends AbstractCassandraTest {
 
         final RrdAggregationTask aggregationTask = new RrdAggregationTask(ENV, RRD_QUERIES, ERROR_FILE_LOGGER,
                 Arrays.asList(service1,service2,service3), MONTH, now1, COUNTER, PROGRESS_COUNTER);
+        aggregationTask.setCountDownLatch(new CountDownLatch(1));
 
         //When
         aggregationTask.run();

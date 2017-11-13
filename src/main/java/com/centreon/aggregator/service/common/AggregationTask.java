@@ -3,15 +3,16 @@ package com.centreon.aggregator.service.common;
 import static com.centreon.aggregator.configuration.EnvParams.*;
 import static com.centreon.aggregator.configuration.EnvParams.INSERT_PROGRESS_DISPLAY_MULTIPLIER;
 import static com.centreon.aggregator.configuration.EnvParams.INSERT_PROGRESS_DISPLAY_MULTIPLIER_DEFAULT;
-import static java.util.stream.Collectors.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -19,7 +20,6 @@ import org.springframework.core.env.Environment;
 
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
 import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Row;
 
 public abstract class AggregationTask implements Runnable {
 
@@ -28,14 +28,18 @@ public abstract class AggregationTask implements Runnable {
     protected final AtomicInteger progressCounter;
     protected final int asyncBatchSize;
     protected final int asyncBatchSleepInMillis;
+    protected final int aggregationSelectionThrottleInMs;
     protected final int progressCount;
     protected final AggregationUnit aggregationUnit;
     protected final LocalDateTime now;
+
+    protected CountDownLatch countDownLatch;
 
     protected AggregationTask(Environment env, ErrorFileLogger errorFileLogger, AtomicInteger counter, AtomicInteger progressCounter, AggregationUnit aggregationUnit, LocalDateTime now) {
         this.asyncBatchSize = Integer.parseInt(env.getProperty(ASYNC_BATCH_SIZE, ASYNC_BATCH_SIZE_DEFAULT));
         this.asyncBatchSleepInMillis = Integer.parseInt(env.getProperty(ASYNC_BATCH_SLEEP_MILLIS, ASYNC_BATCH_SLEEP_MILLIS_DEFAULT));
         this.progressCount = asyncBatchSize * Integer.parseInt(env.getProperty(INSERT_PROGRESS_DISPLAY_MULTIPLIER, INSERT_PROGRESS_DISPLAY_MULTIPLIER_DEFAULT));
+        this.aggregationSelectionThrottleInMs = Integer.parseInt(env.getProperty(AGGREGATION_SELECT_THROTTLE_IN_MS, AGGREGATION_SELECT_THROTTLE_IN_MS_DEFAULT));
         this.errorFileLogger = errorFileLogger;
         this.counter = counter;
         this.progressCounter = progressCounter;
@@ -74,5 +78,13 @@ public abstract class AggregationTask implements Runnable {
                 }
             }
         }
+    }
+
+    public CountDownLatch getCountDownLatch() {
+        return countDownLatch;
+    }
+
+    public void setCountDownLatch(CountDownLatch countDownLatch) {
+        this.countDownLatch = countDownLatch;
     }
 }

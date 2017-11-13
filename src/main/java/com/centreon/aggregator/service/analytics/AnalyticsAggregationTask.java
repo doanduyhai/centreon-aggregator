@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -40,11 +41,18 @@ public class AnalyticsAggregationTask extends AggregationTask {
     @Override
     public void run() {
         for (Integer idMetric : idMetricRange) {
+            try {
+                Thread.sleep(aggregationSelectionThrottleInMs);
+            } catch (InterruptedException e) {
+                LOGGER.error("Fail processing id_metric {} because : {}", idMetric, e.getMessage());
+                errorFileLogger.writeLine(idMetric.toString());
+            }
             processAggregationForMetric(idMetric);
         }
         LOGGER.info("Finish aggregating for id metric range [{} - {}]",
                 idMetricRange.get(0),
                 idMetricRange.get(idMetricRange.size()-1));
+        countDownLatch.countDown();
     }
 
     private void processAggregationForMetric(Integer idMetric) {
@@ -96,5 +104,4 @@ public class AnalyticsAggregationTask extends AggregationTask {
                 .collect(toList());
 
     }
-
 }

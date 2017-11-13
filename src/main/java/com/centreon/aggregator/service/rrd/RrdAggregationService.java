@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import com.centreon.aggregator.repository.MetaDataQueries;
 import com.centreon.aggregator.repository.RRDQueries;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
+import com.centreon.aggregator.service.common.AggregationTask;
 import com.centreon.aggregator.service.common.AggregationUnit;
 
 @Service
@@ -30,6 +31,7 @@ public class RrdAggregationService {
     private final RRDQueries rrdQueries;
     private final int aggregationBatchSize;
     private final int threadPoolQueueSize;
+    private final int aggregationTaskSubmitThrottleInMs;
     private final ThreadPoolExecutor executorService;
     private final ErrorFileLogger errorFileLogger;
 
@@ -44,6 +46,7 @@ public class RrdAggregationService {
         this.env = env;
         this.aggregationBatchSize = Integer.parseInt(env.getProperty(AGGREGATION_BATCH_SIZE, AGGREGATION_BATCH_SIZE_DEFAULT));
         this.threadPoolQueueSize = Integer.parseInt(env.getProperty(AGGREGATION_THREAD_POOL_QUEUE_SIZE, AGGREGATION_THREAD_POOL_QUEUE_SIZE_DEFAULT));
+        this.aggregationTaskSubmitThrottleInMs = Integer.parseInt(env.getProperty(AGGREGATION_TASK_SUBMIT_THROTTLE_IN_MS, AGGREGATION_TASK_SUBMIT_THROTTLE_IN_MS_DEFAULT));
         this.metaDataQueries = metaDataQueries;
         this.rrdQueries = rrdQueries;
 
@@ -62,45 +65,41 @@ public class RrdAggregationService {
         final AtomicInteger progressCounter = new AtomicInteger(0);
 
         final List<UUID> services = new ArrayList<>(aggregationBatchSize);
+
+        final List<RrdAggregationTask> taskList = new ArrayList<>();
+
         metaDataQueries.getDistinctServicesStream()
                 .forEach(service -> {
                     services.add(service);
                     if (services.size() == aggregationBatchSize) {
-                        LOGGER.info("Enqueuing new aggregation task");
-                        enqueueAggregationTask(aggregationUnit, now, counter, progressCounter, new ArrayList<>(services));
+                        taskList.add(new RrdAggregationTask(env, rrdQueries, errorFileLogger,
+                                new ArrayList(services), aggregationUnit, now, counter,
+                                progressCounter));
                         services.clear();
                     }
                 });
 
         if (services.size() > 0) {
-            LOGGER.info("Execute synchronously last aggregation task");
-            new RrdAggregationTask(env, rrdQueries, errorFileLogger,
+            taskList.add(new RrdAggregationTask(env, rrdQueries, errorFileLogger,
                     new ArrayList(services), aggregationUnit, now, counter,
-                    progressCounter).run();
+                    progressCounter));
         }
 
-        LOGGER.info("Finish aggregating SUCCESSFULLY rrd_aggregated data for {} {}",
-                aggregationUnit.name(), nowAsLong);
+        final CountDownLatch countDownLatch = new CountDownLatch(taskList.size());
 
-
-    }
-
-    private void enqueueAggregationTask(AggregationUnit aggregationUnit, LocalDateTime now, AtomicInteger counter, AtomicInteger progressCounter, List<UUID> services)  {
-        while (executorService.getQueue().size() >= threadPoolQueueSize) {
-            try {
+        for (RrdAggregationTask aggregationTask : taskList) {
+            LOGGER.info("Enqueuing new rrd aggregation task");
+            Thread.sleep(aggregationTaskSubmitThrottleInMs);
+            while (executorService.getQueue().size() >= threadPoolQueueSize) {
                 Thread.sleep(10);
-            } catch (InterruptedException e) {
-                LOGGER.error("Fail processing service {} because : {}",
-                        services.stream().map(UUID::toString).collect(Collectors.joining(", ")),
-                        e.getMessage());
-                services.forEach(service -> errorFileLogger.writeLine(service.toString()));
             }
-
+            aggregationTask.setCountDownLatch(countDownLatch);
+            executorService.submit(aggregationTask);
         }
-        executorService.submit(new RrdAggregationTask(env, rrdQueries, errorFileLogger,
-                        new ArrayList(services), aggregationUnit, now, counter,
-                        progressCounter));
+
+        countDownLatch.await();
+
+        LOGGER.info("Finish enqueuing rrd_aggregated tasks for {} {}",
+                aggregationUnit.name(), nowAsLong);
     }
-
-
 }

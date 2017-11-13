@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.*;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -39,11 +40,18 @@ public class RrdAggregationTask extends AggregationTask {
     @Override
     public void run() {
         for (UUID service : serviceRange) {
+            try {
+                Thread.sleep(aggregationSelectionThrottleInMs);
+            } catch (InterruptedException e) {
+                LOGGER.error("Fail processing id_metric {} because : {}", service, e.getMessage());
+                errorFileLogger.writeLine(service.toString());
+            }
             processAggregationForService(service);
         }
         LOGGER.info("Finish aggregating for service range [{} - {}]",
                 serviceRange.get(0),
                 serviceRange.get(serviceRange.size()-1));
+        countDownLatch.countDown();
     }
 
     private void processAggregationForService(UUID service) {
@@ -105,6 +113,4 @@ public class RrdAggregationTask extends AggregationTask {
                 .collect(toList());
 
     }
-
-
 }

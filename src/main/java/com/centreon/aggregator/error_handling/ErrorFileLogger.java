@@ -18,11 +18,11 @@ public class ErrorFileLogger {
 
     public void writeLine(String line) {
         this.printWriter.println(line);
+        this.printWriter.flush();
     }
 
     public void close() {
         if (printWriter != null) {
-            printWriter.flush();
             printWriter.close();
         }
     }

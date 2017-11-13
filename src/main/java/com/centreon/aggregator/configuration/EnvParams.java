@@ -48,6 +48,12 @@ public interface EnvParams {
     String ASYNC_BATCH_SIZE = "dse.async_batch_size";
     String ASYNC_BATCH_SIZE_DEFAULT = "100";
 
+    String AGGREGATION_TASK_SUBMIT_THROTTLE_IN_MS = "dse.aggregation_task_submit_throttle_in_millis";
+    String AGGREGATION_TASK_SUBMIT_THROTTLE_IN_MS_DEFAULT = "2";
+
+    String AGGREGATION_SELECT_THROTTLE_IN_MS = "dse.aggregation_select_throttle_in_millis";
+    String AGGREGATION_SELECT_THROTTLE_IN_MS_DEFAULT = "2";
+
     String ASYNC_BATCH_SLEEP_MILLIS = "dse.async_batch_sleep_in_millis";
     String ASYNC_BATCH_SLEEP_MILLIS_DEFAULT = "10";
 

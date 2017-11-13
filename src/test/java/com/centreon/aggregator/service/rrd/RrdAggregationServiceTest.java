@@ -6,7 +6,9 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.junit.Test;
@@ -20,6 +22,7 @@ import com.centreon.aggregator.repository.RRDQueries;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
 import com.centreon.aggregator.service.FakeEnv;
 import com.centreon.aggregator.service.FakeExecutorService;
+import com.centreon.aggregator.service.common.AggregationTask;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RrdAggregationServiceTest {
@@ -33,15 +36,21 @@ public class RrdAggregationServiceTest {
     @Mock
     private ErrorFileLogger errorFileLogger;
 
-    private List<RrdAggregationTask> tasks = new ArrayList<>();
+    private List<AggregationTask> tasks = new ArrayList<>();
 
     private ThreadPoolExecutor executorService = new FakeExecutorService() {
         @Override
         public Future<?> submit(Runnable task) {
-            tasks.add((RrdAggregationTask)task);
+            final AggregationTask aggregationTask = (AggregationTask) task;
+            tasks.add(aggregationTask);
+            aggregationTask.getCountDownLatch().countDown();
             return null;
         }
 
+        @Override
+        public BlockingQueue<Runnable> getQueue() {
+            return new LinkedBlockingQueue<>(100);
+        }
     };
 
     private static final Environment env = new FakeEnv() {
@@ -50,7 +59,7 @@ public class RrdAggregationServiceTest {
             if (key.equals(AGGREGATION_BATCH_SIZE)) {
                 return "2";
             } else {
-                return "1";
+                return "10";
             }
         }
 

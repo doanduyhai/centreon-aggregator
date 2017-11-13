@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.lang3.RandomUtils;
@@ -20,7 +21,6 @@ import org.springframework.core.env.Environment;
 import com.centreon.aggregator.AbstractCassandraTest;
 import com.centreon.aggregator.repository.AnalyticsQueries;
 import com.centreon.aggregator.service.FakeEnv;
-import com.centreon.aggregator.service.rrd.RrdAggregationTask;
 import com.datastax.driver.core.Row;
 
 
@@ -45,7 +45,7 @@ public class AnalyticsAggregationTaskTest extends AbstractCassandraTest {
             } else if (key.equals(INSERT_PROGRESS_DISPLAY_MULTIPLIER)) {
                 return "1";
             } else {
-                return null;
+                return "1";
             }
         }
 
@@ -71,6 +71,7 @@ public class AnalyticsAggregationTaskTest extends AbstractCassandraTest {
 
         final AnalyticsAggregationTask aggregationTask = new AnalyticsAggregationTask(ENV, ANALYTICS_QUERIES, ERROR_FILE_LOGGER, Arrays.asList(idMetric),
                 DAY, now, COUNTER, PROGRESS_COUNTER);
+        aggregationTask.setCountDownLatch(new CountDownLatch(1));
 
         //When
         aggregationTask.run();
@@ -110,6 +111,7 @@ public class AnalyticsAggregationTaskTest extends AbstractCassandraTest {
 
         final AnalyticsAggregationTask aggregationTask = new AnalyticsAggregationTask(ENV, ANALYTICS_QUERIES, ERROR_FILE_LOGGER,
                 Arrays.asList(idMetric), WEEK, now, COUNTER, PROGRESS_COUNTER);
+        aggregationTask.setCountDownLatch(new CountDownLatch(1));
 
         //When
         aggregationTask.run();
@@ -151,6 +153,7 @@ public class AnalyticsAggregationTaskTest extends AbstractCassandraTest {
 
         final AnalyticsAggregationTask aggregationTask = new AnalyticsAggregationTask(ENV, ANALYTICS_QUERIES, ERROR_FILE_LOGGER,
                 Arrays.asList(idMetric), MONTH, now, COUNTER, PROGRESS_COUNTER);
+        aggregationTask.setCountDownLatch(new CountDownLatch(1));
 
         //When
         aggregationTask.run();

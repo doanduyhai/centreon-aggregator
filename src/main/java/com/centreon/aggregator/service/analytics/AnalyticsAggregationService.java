@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -20,8 +22,8 @@ import org.springframework.stereotype.Service;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
 import com.centreon.aggregator.repository.AnalyticsQueries;
 import com.centreon.aggregator.repository.MetaDataQueries;
+import com.centreon.aggregator.service.common.AggregationTask;
 import com.centreon.aggregator.service.common.AggregationUnit;
-import com.centreon.aggregator.service.rrd.RrdAggregationTask;
 
 @Service
 public class AnalyticsAggregationService {
@@ -33,6 +35,7 @@ public class AnalyticsAggregationService {
     private final AnalyticsQueries analyticsQueries;
     private final int aggregationBatchSize;
     private final int threadPoolQueueSize;
+    private final int aggregationTaskSubmitThrottleInMs;
     private final ThreadPoolExecutor executorService;
     private final ErrorFileLogger errorFileLogger;
 
@@ -47,6 +50,7 @@ public class AnalyticsAggregationService {
         this.env = env;
         this.aggregationBatchSize = Integer.parseInt(env.getProperty(AGGREGATION_BATCH_SIZE, AGGREGATION_BATCH_SIZE_DEFAULT));
         this.threadPoolQueueSize = Integer.parseInt(env.getProperty(AGGREGATION_THREAD_POOL_QUEUE_SIZE, AGGREGATION_THREAD_POOL_QUEUE_SIZE_DEFAULT));
+        this.aggregationTaskSubmitThrottleInMs = Integer.parseInt(env.getProperty(AGGREGATION_TASK_SUBMIT_THROTTLE_IN_MS, AGGREGATION_TASK_SUBMIT_THROTTLE_IN_MS_DEFAULT));
         this.metaDataQueries = metaDataQueries;
         this.analyticsQueries = analyticsQueries;
 
@@ -65,44 +69,39 @@ public class AnalyticsAggregationService {
         final AtomicInteger progressCounter = new AtomicInteger(0);
 
         final List<Integer> metricIds = new ArrayList<>(aggregationBatchSize);
+
+        final List<AnalyticsAggregationTask> taskList = new ArrayList<>();
+
         metaDataQueries.getDistinctMetricIdsStream()
                 .forEach(idMetric -> {
                     metricIds.add(idMetric);
                     if (metricIds.size() == aggregationBatchSize) {
-                        LOGGER.info("Enqueuing new aggregation task");
-                        enqueueAggregationTask(aggregationUnit, now, counter, progressCounter, new ArrayList<>(metricIds));
+                        taskList.add(new AnalyticsAggregationTask(env, analyticsQueries, errorFileLogger,
+                                new ArrayList(metricIds), aggregationUnit, now, counter, progressCounter));
                         metricIds.clear();
                     }
                 });
 
         if (metricIds.size() > 0) {
-            LOGGER.info("Execute synchronously last aggregation task");
-            new AnalyticsAggregationTask(env, analyticsQueries, errorFileLogger,
-                    new ArrayList(metricIds), aggregationUnit, now, counter, progressCounter)
-                    .run();
+            taskList.add(new AnalyticsAggregationTask(env, analyticsQueries, errorFileLogger,
+                    new ArrayList(metricIds), aggregationUnit, now, counter, progressCounter));
         }
 
-        LOGGER.info("Finish aggregating SUCCESSFULLY analytics_aggregated data for {} {}",
-                aggregationUnit.name(), nowAsLong);
+        final CountDownLatch countDownLatch = new CountDownLatch(taskList.size());
 
-
-    }
-
-    private void enqueueAggregationTask(AggregationUnit aggregationUnit, LocalDateTime now, AtomicInteger counter, AtomicInteger progressCounter, List<Integer> metricIds)  {
-        while (executorService.getQueue().size() >= threadPoolQueueSize) {
-            try {
+        for (AnalyticsAggregationTask aggregationTask : taskList) {
+            LOGGER.info("Enqueuing new analytics aggregation task");
+            Thread.sleep(aggregationTaskSubmitThrottleInMs);
+            while (executorService.getQueue().size() >= threadPoolQueueSize) {
                 Thread.sleep(10);
-            } catch (InterruptedException e) {
-                LOGGER.error("Fail processing id metric {} because : {}",
-                        metricIds.stream().map(Number::toString).collect(Collectors.joining(", ")),
-                        e.getMessage());
-                metricIds.forEach(idMetric -> errorFileLogger.writeLine(idMetric.toString()));
             }
+            aggregationTask.setCountDownLatch(countDownLatch);
+            executorService.submit(aggregationTask);
         }
 
-        executorService.submit(new AnalyticsAggregationTask(env, analyticsQueries, errorFileLogger,
-                        new ArrayList(metricIds), aggregationUnit, now, counter, progressCounter));
+        countDownLatch.await();
+
+        LOGGER.info("Finish processing {} analytics_aggregated tasks for {} {}",
+                taskList.size(), aggregationUnit.name(), nowAsLong);
     }
-
-
 }
