@@ -71,7 +71,7 @@ public class AnalyticsQueries {
     }
 
     public Stream<Map.Entry<Long, Row>> getAggregationForDay(Integer idMetric, LocalDateTime now) {
-        return transformResultSetFutures(IntStream.range(0, 24)
+        return transformResultSetFutures(IntStream.range(0, 23)
                 .mapToObj(hour -> now.withHour(hour))
                 .map(hour -> HOUR.toLongFormat(hour)), idMetric, DAY);
 
