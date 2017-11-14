@@ -1,0 +1,2 @@
+# centreon-aggregator
+Centreon Aggregator
