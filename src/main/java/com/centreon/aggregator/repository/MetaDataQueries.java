@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import com.centreon.aggregator.configuration.CassandraConfiguration.DSETopology;
+import com.centreon.aggregator.service.common.IdMetric;
+import com.centreon.aggregator.service.common.IdService;
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.Session;
 
@@ -51,7 +53,7 @@ public class MetaDataQueries {
                 format(SELECT_DISTINCT_METRIC_ID, dseTopology.keyspace)));
     }
 
-    public Stream<UUID> getDistinctServiceIdStream() {
+    public Stream<IdService> getDistinctServiceIdStream() {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Get distinct service ids");
         }
@@ -62,10 +64,10 @@ public class MetaDataQueries {
 
         Iterable<Row> iterable = () -> iterator;
         Stream<Row> targetStream = StreamSupport.stream(iterable.spliterator(), false);
-        return targetStream.map(row -> row.getUUID("service"));
+        return targetStream.map(row -> new IdService(row.getUUID("service")));
     }
 
-    public Stream<Integer> getDistinctMetricIdsStream() {
+    public Stream<IdMetric> getDistinctMetricIdsStream() {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Get distinct metric ids");
         }
@@ -76,6 +78,6 @@ public class MetaDataQueries {
 
         Iterable<Row> iterable = () -> iterator;
         Stream<Row> targetStream = StreamSupport.stream(iterable.spliterator(), false);
-        return targetStream.map(row -> row.getInt("id_metric"));
+        return targetStream.map(row -> new IdMetric(row.getInt("id_metric")));
     }
 }

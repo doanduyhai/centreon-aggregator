@@ -14,9 +14,7 @@ import org.junit.After;
 import org.junit.Test;
 
 import com.centreon.aggregator.AbstractCassandraTest;
-import com.centreon.aggregator.service.common.AggregatedRow;
-import com.centreon.aggregator.service.common.AggregatedValue;
-import com.centreon.aggregator.service.common.AggregationUnit;
+import com.centreon.aggregator.service.common.*;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 
@@ -36,7 +34,7 @@ public class RRDQueriesTest extends AbstractCassandraTest {
         final int idMetric1 = RandomUtils.nextInt(0, Integer.MAX_VALUE);
         final int idMetric2 = idMetric1 + 1;
         final int idMetric3 = idMetric2 + 1;
-        final UUID service = new UUID(0, idMetric1);
+        final IdService service = new IdService(new UUID(0, idMetric1));
         final int hour1 = RandomUtils.nextInt(0, 23);
         final int hour2 = RandomUtils.nextInt(0, 23);
         final LocalDateTime now1 = getLocalDateTimeFromHour(hour1);
@@ -44,7 +42,7 @@ public class RRDQueriesTest extends AbstractCassandraTest {
         final long hour1AsLong = HOUR.toLongFormat(now1);
         final long hour2AsLong = HOUR.toLongFormat(now2);
         final Map<String, Object> params = new HashMap<>();
-        params.put("service", service);
+        params.put("service", service.value);
         params.put("hour1", hour1AsLong);
         params.put("hour2", hour2AsLong);
         params.put("id_metric1", idMetric1);
@@ -60,13 +58,13 @@ public class RRDQueriesTest extends AbstractCassandraTest {
         SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/RRDQueries/insert_data_for_hour.cql", params);
 
         //When
-        final Stream<Map.Entry<Long, List<Row>>> aggregationForDay = RRD_QUERIES.getAggregationForDay(service, now1);
-        final Map<Long, List<Row>> results = aggregationForDay.collect(
+        final Stream<Map.Entry<TimeValueAsLong, List<Row>>> aggregationForDay = RRD_QUERIES.getAggregationForDay(service, now1);
+        final Map<TimeValueAsLong, List<Row>> results = aggregationForDay.collect(
                 Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         //Then
         assertThat(results).hasSize(2);
-        final List<Row> hour1Data = results.get(hour1AsLong);
+        final List<Row> hour1Data = results.get(new TimeValueAsLong(hour1AsLong));
         assertThat(hour1Data).hasSize(3);
 
         final Row hour1Metric1 = hour1Data.get(0);
@@ -87,7 +85,7 @@ public class RRDQueriesTest extends AbstractCassandraTest {
         assertThat(hour1Metric3.getFloat("sum")).isEqualTo(10.0f);
         assertThat(hour1Metric3.getInt("count")).isEqualTo(1);
 
-        final List<Row> hour2Data = results.get(hour2AsLong);
+        final List<Row> hour2Data = results.get(new TimeValueAsLong(hour2AsLong));
         assertThat(hour2Data).hasSize(1);
 
         final Row hour2Metric1 = hour2Data.get(0);
@@ -104,14 +102,14 @@ public class RRDQueriesTest extends AbstractCassandraTest {
         final int idMetric1 = RandomUtils.nextInt(0, Integer.MAX_VALUE);
         final int idMetric2 = idMetric1 + 1;
         final int idMetric3 = idMetric2 + 1;
-        final UUID service = new UUID(0, idMetric1);
+        final IdService service = new IdService(new UUID(0, idMetric1));
 
         final LocalDateTime now1 = getLocalDateTimeFromWeekDay(0);
         final LocalDateTime now2 = getLocalDateTimeFromWeekDay(2);
         final long day1AsLong = DAY.toLongFormat(now1);
         final long day2AsLong = DAY.toLongFormat(now2);
         final Map<String, Object> params = new HashMap<>();
-        params.put("service", service);
+        params.put("service", service.value);
         params.put("day1", day1AsLong);
         params.put("day2", day2AsLong);
         params.put("id_metric1", idMetric1);
@@ -127,14 +125,14 @@ public class RRDQueriesTest extends AbstractCassandraTest {
         SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/RRDQueries/insert_data_for_day.cql", params);
 
         //When
-        final Stream<Map.Entry<Long, List<Row>>> aggregationForWeek = RRD_QUERIES.getAggregationForWeek(service, now1);
+        final Stream<Map.Entry<TimeValueAsLong, List<Row>>> aggregationForWeek = RRD_QUERIES.getAggregationForWeek(service, now1);
 
-        final Map<Long, List<Row>> results = aggregationForWeek.collect(
+        final Map<TimeValueAsLong, List<Row>> results = aggregationForWeek.collect(
                 Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         //Then
         assertThat(results).hasSize(2);
-        final List<Row> day1Data = results.get(day1AsLong);
+        final List<Row> day1Data = results.get(new TimeValueAsLong(day1AsLong));
         assertThat(day1Data).hasSize(3);
 
         final Row day1Metric1 = day1Data.get(0);
@@ -155,7 +153,7 @@ public class RRDQueriesTest extends AbstractCassandraTest {
         assertThat(day1Metric3.getFloat("sum")).isEqualTo(10.0f);
         assertThat(day1Metric3.getInt("count")).isEqualTo(1);
 
-        final List<Row> day2Data = results.get(day2AsLong);
+        final List<Row> day2Data = results.get(new TimeValueAsLong(day2AsLong));
         assertThat(day2Data).hasSize(1);
 
         final Row day2Metric1 = day2Data.get(0);
@@ -171,7 +169,7 @@ public class RRDQueriesTest extends AbstractCassandraTest {
         final int idMetric1 = RandomUtils.nextInt(0, Integer.MAX_VALUE);
         final int idMetric2 = idMetric1 + 1;
         final int idMetric3 = idMetric2 + 1;
-        final UUID service = new UUID(0, idMetric1);
+        final IdService service = new IdService(new UUID(0, idMetric1));
 
         final int day1 = RandomUtils.nextInt(1, 31);
         final int day2 = RandomUtils.nextInt(1, 31);
@@ -181,7 +179,7 @@ public class RRDQueriesTest extends AbstractCassandraTest {
         final long day1AsLong = DAY.toLongFormat(now1);
         final long day2AsLong = DAY.toLongFormat(now2);
         final Map<String, Object> params = new HashMap<>();
-        params.put("service", service);
+        params.put("service", service.value);
         params.put("day1", day1AsLong);
         params.put("day2", day2AsLong);
         params.put("id_metric1", idMetric1);
@@ -197,14 +195,14 @@ public class RRDQueriesTest extends AbstractCassandraTest {
         SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/RRDQueries/insert_data_for_day.cql", params);
 
         //When
-        final Stream<Map.Entry<Long, List<Row>>> aggregationForMonth = RRD_QUERIES.getAggregationForMonth(service, now1);
+        final Stream<Map.Entry<TimeValueAsLong, List<Row>>> aggregationForMonth = RRD_QUERIES.getAggregationForMonth(service, now1);
 
-        final Map<Long, List<Row>> results = aggregationForMonth.collect(
+        final Map<TimeValueAsLong, List<Row>> results = aggregationForMonth.collect(
                 Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         //Then
         assertThat(results).hasSize(2);
-        final List<Row> day1Data = results.get(day1AsLong);
+        final List<Row> day1Data = results.get(new TimeValueAsLong(day1AsLong));
         assertThat(day1Data).hasSize(3);
 
         final Row day1Metric1 = day1Data.get(0);
@@ -225,7 +223,7 @@ public class RRDQueriesTest extends AbstractCassandraTest {
         assertThat(day1Metric3.getFloat("sum")).isEqualTo(10.0f);
         assertThat(day1Metric3.getInt("count")).isEqualTo(1);
 
-        final List<Row> day2Data = results.get(day2AsLong);
+        final List<Row> day2Data = results.get(new TimeValueAsLong(day2AsLong));
         assertThat(day2Data).hasSize(1);
 
         final Row day2Metric1 = day2Data.get(0);
@@ -238,13 +236,13 @@ public class RRDQueriesTest extends AbstractCassandraTest {
     @Test
     public void should_insert_aggregation_for_day() throws Exception {
         //Given
-        final int idMetric = RandomUtils.nextInt(0, Integer.MAX_VALUE);
-        final UUID service = new UUID(0, idMetric);
+        final IdMetric idMetric = new IdMetric(RandomUtils.nextInt(0, Integer.MAX_VALUE));
+        final IdService service = new IdService(new UUID(0, idMetric.value));
         final AggregationUnit aggregationUnit = MONTH;
         //20171012
         final LocalDateTime now = getLocalDateTimeFromMonthDay(12);
         final AggregatedValue aggregatedValue = new AggregatedValue(12.0f, 5.0f, 12.4f, 4);
-        final AggregatedRow aggregatedRow = new AggregatedRow(idMetric, DAY.toLongFormat(now), aggregatedValue);
+        final AggregatedRow aggregatedRow = new AggregatedRow(idMetric, new TimeValueAsLong(DAY.toLongFormat(now)), aggregatedValue);
 
         //When
         final ResultSetFuture resultSetFuture = RRD_QUERIES.insertAggregationFor(aggregationUnit, now, service, aggregatedRow);
@@ -253,7 +251,7 @@ public class RRDQueriesTest extends AbstractCassandraTest {
                 "WHERE service=%s " +
                 "AND aggregation_unit='MONTH' " +
                 "AND time_value=201710 " +
-                "AND id_metric=%s", service, idMetric)).one();
+                "AND id_metric=%s", service.value, idMetric.value)).one();
 
         //Then
         assertThat(row).isNotNull();

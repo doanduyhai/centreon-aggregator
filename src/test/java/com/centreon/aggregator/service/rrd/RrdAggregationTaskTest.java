@@ -20,6 +20,7 @@ import org.springframework.core.env.Environment;
 import com.centreon.aggregator.AbstractCassandraTest;
 import com.centreon.aggregator.repository.RRDQueries;
 import com.centreon.aggregator.service.FakeEnv;
+import com.centreon.aggregator.service.common.IdService;
 import com.datastax.driver.core.Row;
 
 public class RrdAggregationTaskTest extends AbstractCassandraTest {
@@ -57,14 +58,14 @@ public class RrdAggregationTaskTest extends AbstractCassandraTest {
         final int idMetric1 = RandomUtils.nextInt(0, Integer.MAX_VALUE);
         final int idMetric2 = idMetric1 + 1;
         final int idMetric3 = idMetric2 + 1;
-        final UUID service1 = new UUID(0, idMetric3);
-        final UUID service2 = new UUID(0, idMetric2);
-        final UUID service3 = new UUID(0, idMetric1);
+        final IdService service1 = new IdService(new UUID(0, idMetric3));
+        final IdService service2 = new IdService(new UUID(0, idMetric2));
+        final IdService service3 = new IdService(new UUID(0, idMetric1));
         final int hour1 = RandomUtils.nextInt(0, 23);
         final LocalDateTime now1 = getLocalDateTimeFromHour(hour1);
         final long hour1AsLong = HOUR.toLongFormat(now1);
         final Map<String, Object> params = new HashMap<>();
-        params.put("service", service1);
+        params.put("service", service1.value);
         params.put("hour1", hour1AsLong);
         params.put("id_metric1", idMetric1);
         params.put("id_metric2", idMetric2);
@@ -118,14 +119,14 @@ public class RrdAggregationTaskTest extends AbstractCassandraTest {
         final int idMetric1 = RandomUtils.nextInt(0, Integer.MAX_VALUE);
         final int idMetric2 = idMetric1 + 1;
         final int idMetric3 = idMetric2 + 1;
-        final UUID service1 = new UUID(0, idMetric3);
-        final UUID service2 = new UUID(0, idMetric2);
-        final UUID service3 = new UUID(0, idMetric1);
+        final IdService service1 = new IdService(new UUID(0, idMetric3));
+        final IdService service2 = new IdService(new UUID(0, idMetric2));
+        final IdService service3 = new IdService(new UUID(0, idMetric1));
 
         final LocalDateTime now1 = getLocalDateTimeFromWeekDay(0);
         final long day1AsLong = DAY.toLongFormat(now1);
         final Map<String, Object> params = new HashMap<>();
-        params.put("service", service1);
+        params.put("service", service1.value);
         params.put("day1", day1AsLong);
         params.put("id_metric1", idMetric1);
         params.put("id_metric2", idMetric2);
@@ -182,9 +183,9 @@ public class RrdAggregationTaskTest extends AbstractCassandraTest {
         final int idMetric1 = RandomUtils.nextInt(0, Integer.MAX_VALUE);
         final int idMetric2 = idMetric1 + 1;
         final int idMetric3 = idMetric2 + 1;
-        final UUID service1 = new UUID(0, idMetric3);
-        final UUID service2 = new UUID(0, idMetric2);
-        final UUID service3 = new UUID(0, idMetric1);
+        final IdService service1 = new IdService(new UUID(0, idMetric3));
+        final IdService service2 = new IdService(new UUID(0, idMetric2));
+        final IdService service3 = new IdService(new UUID(0, idMetric1));
 
         final int day1 = RandomUtils.nextInt(1, 31);
 

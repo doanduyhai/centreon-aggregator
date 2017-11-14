@@ -21,6 +21,8 @@ import com.centreon.aggregator.configuration.CassandraConfiguration.DSETopology;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
 import com.centreon.aggregator.service.common.AggregatedRow;
 import com.centreon.aggregator.service.common.AggregationUnit;
+import com.centreon.aggregator.service.common.IdMetric;
+import com.centreon.aggregator.service.common.TimeValueAsLong;
 import com.datastax.driver.core.*;
 
 /**
@@ -70,32 +72,32 @@ public class AnalyticsQueries {
                 String.format(GENERIC_INSERT_AGGREGATE, dseTopology.keyspace)));
     }
 
-    public Stream<Map.Entry<Long, Row>> getAggregationForDay(Integer idMetric, LocalDateTime now) {
+    public Stream<Map.Entry<TimeValueAsLong, Row>> getAggregationForDay(IdMetric idMetric, LocalDateTime now) {
         return transformResultSetFutures(IntStream.range(0, 23)
                 .mapToObj(hour -> now.withHour(hour))
-                .map(hour -> HOUR.toLongFormat(hour)), idMetric, DAY);
+                .map(hour -> HOUR.toTimeValue(hour)), idMetric, DAY);
 
     }
 
-    public Stream<Map.Entry<Long, Row>> getAggregationForWeek(Integer idMetric, LocalDateTime now) {
+    public Stream<Map.Entry<TimeValueAsLong, Row>> getAggregationForWeek(IdMetric idMetric, LocalDateTime now) {
         final LocalDateTime firstDayOfWeek = now.with(DayOfWeek.MONDAY);
         return transformResultSetFutures(IntStream.range(0, 6)
                 .mapToObj(increment -> firstDayOfWeek.plusDays(increment))
-                .map(day -> DAY.toLongFormat(day)), idMetric, WEEK);
+                .map(day -> DAY.toTimeValue(day)), idMetric, WEEK);
     }
 
-    public Stream<Map.Entry<Long, Row>> getAggregationForMonth(Integer idMetric, LocalDateTime now) {
+    public Stream<Map.Entry<TimeValueAsLong, Row>> getAggregationForMonth(IdMetric idMetric, LocalDateTime now) {
         return transformResultSetFutures(IntStream.range(1, 31)
                 .mapToObj(day -> now.withDayOfMonth(day))
-                .map(day -> DAY.toLongFormat(day)), idMetric, MONTH);
+                .map(day -> DAY.toTimeValue(day)), idMetric, MONTH);
     }
 
     public ResultSetFuture insertAggregationFor(AggregationUnit aggregationUnit, LocalDateTime currentTimeValue, AggregatedRow aggregatedRow) {
         final BoundStatement bs = GENERIC_INSERT_AGGREGATE_PS.bind();
         bs.setString("aggregation_unit", aggregationUnit.name());
         bs.setLong("time_value", aggregationUnit.toLongFormat(currentTimeValue));
-        bs.setInt("id_metric", aggregatedRow.idMetric);
-        bs.setLong("previous_time_value", aggregatedRow.timeValue);
+        bs.setInt("id_metric", aggregatedRow.idMetric.value);
+        bs.setLong("previous_time_value", aggregatedRow.timeValue.value);
 
         if (aggregatedRow.min == null) {
             bs.unset("min");
@@ -120,10 +122,10 @@ public class AnalyticsQueries {
         return this.session.executeAsync(bs);
     }
 
-    private Stream<Map.Entry<Long, Row>> transformResultSetFutures(Stream<Long> previousTimeValues, Integer idMetric, AggregationUnit aggregationUnit) {
+    private Stream<Map.Entry<TimeValueAsLong, Row>> transformResultSetFutures(Stream<TimeValueAsLong> previousTimeValues, IdMetric idMetric, AggregationUnit aggregationUnit) {
         return previousTimeValues
                 .map(previousTimeUnit -> {
-                    final BoundStatement bs = GENERIC_SELECT_AGGREGATE_PS.bind(idMetric, aggregationUnit.previousAggregationUnit().name(), previousTimeUnit);
+                    final BoundStatement bs = GENERIC_SELECT_AGGREGATE_PS.bind(idMetric.value, aggregationUnit.previousAggregationUnit().name(), previousTimeUnit.value);
                     return immutableEntry(previousTimeUnit, session.executeAsync(bs));
                 })
                 .map(entry -> {

@@ -2,7 +2,6 @@ package com.centreon.aggregator.repository;
 
 import static com.centreon.aggregator.service.common.AggregationUnit.*;
 import static com.google.common.collect.Maps.immutableEntry;
-import static java.util.stream.Collectors.reducing;
 
 import java.time.*;
 import java.util.*;
@@ -21,6 +20,8 @@ import com.centreon.aggregator.configuration.CassandraConfiguration.DSETopology;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
 import com.centreon.aggregator.service.common.AggregatedRow;
 import com.centreon.aggregator.service.common.AggregationUnit;
+import com.centreon.aggregator.service.common.IdService;
+import com.centreon.aggregator.service.common.TimeValueAsLong;
 import com.datastax.driver.core.*;
 
 /**
@@ -70,33 +71,33 @@ public class RRDQueries {
     }
 
 
-    public Stream<Map.Entry<Long, List<Row>>> getAggregationForDay(UUID service, LocalDateTime now) {
+    public Stream<Map.Entry<TimeValueAsLong, List<Row>>> getAggregationForDay(IdService service, LocalDateTime now) {
         return transformResultSetFutures(IntStream.range(0, 23)
                 .mapToObj(hour -> now.withHour(hour))
-                .map(hour -> HOUR.toLongFormat(hour)), service, DAY, errorFileLogger);
+                .map(hour -> HOUR.toTimeValue(hour)), service, DAY, errorFileLogger);
 
     }
 
-    public Stream<Map.Entry<Long, List<Row>>> getAggregationForWeek(UUID service, LocalDateTime now) {
+    public Stream<Map.Entry<TimeValueAsLong, List<Row>>> getAggregationForWeek(IdService service, LocalDateTime now) {
         final LocalDateTime firstDayOfWeek = now.with(DayOfWeek.MONDAY);
         return transformResultSetFutures(IntStream.range(0, 6)
                 .mapToObj(increment -> firstDayOfWeek.plusDays(increment))
-                .map(day -> DAY.toLongFormat(day)), service, WEEK, errorFileLogger);
+                .map(day -> DAY.toTimeValue(day)), service, WEEK, errorFileLogger);
     }
 
-    public Stream<Map.Entry<Long, List<Row>>> getAggregationForMonth(UUID service, LocalDateTime now) {
+    public Stream<Map.Entry<TimeValueAsLong, List<Row>>> getAggregationForMonth(IdService service, LocalDateTime now) {
         return transformResultSetFutures(IntStream.range(1, 31)
                 .mapToObj(day -> now.withDayOfMonth(day))
-                .map(day -> DAY.toLongFormat(day)), service, MONTH, errorFileLogger);
+                .map(day -> DAY.toTimeValue(day)), service, MONTH, errorFileLogger);
     }
 
-    public ResultSetFuture insertAggregationFor(AggregationUnit aggregationUnit, LocalDateTime currentTimeValue, UUID service, AggregatedRow aggregatedRow) {
+    public ResultSetFuture insertAggregationFor(AggregationUnit aggregationUnit, LocalDateTime currentTimeValue, IdService service, AggregatedRow aggregatedRow) {
         final BoundStatement bs = GENERIC_INSERT_AGGREGATE_PS.bind();
-        bs.setUUID("service", service);
+        bs.setUUID("service", service.value);
         bs.setString("aggregation_unit", aggregationUnit.name());
         bs.setLong("time_value", aggregationUnit.toLongFormat(currentTimeValue));
-        bs.setInt("id_metric", aggregatedRow.idMetric);
-        bs.setLong("previous_time_value", aggregatedRow.timeValue);
+        bs.setInt("id_metric", aggregatedRow.idMetric.value);
+        bs.setLong("previous_time_value", aggregatedRow.timeValue.value);
 
         if (aggregatedRow.min == null) {
             bs.unset("min");
@@ -121,10 +122,10 @@ public class RRDQueries {
         return this.session.executeAsync(bs);
     }
 
-    private Stream<Map.Entry<Long, List<Row>>> transformResultSetFutures(Stream<Long> timeValues, UUID service, AggregationUnit aggregationUnit, ErrorFileLogger errorFileLogger) {
+    private Stream<Map.Entry<TimeValueAsLong, List<Row>>> transformResultSetFutures(Stream<TimeValueAsLong> timeValues, IdService service, AggregationUnit aggregationUnit, ErrorFileLogger errorFileLogger) {
         return timeValues
                 .map(previousTimeUnit -> {
-                    final BoundStatement bs = GENERIC_SELECT_AGGREGATE_PS.bind(service, aggregationUnit.previousAggregationUnit().name(), previousTimeUnit);
+                    final BoundStatement bs = GENERIC_SELECT_AGGREGATE_PS.bind(service.value, aggregationUnit.previousAggregationUnit().name(), previousTimeUnit.value);
                     return immutableEntry(previousTimeUnit, session.executeAsync(bs));
                 })
                 .map(entry -> {

@@ -13,10 +13,7 @@ import org.springframework.core.env.Environment;
 
 import com.centreon.aggregator.repository.RRDQueries;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
-import com.centreon.aggregator.service.common.AggregatedRow;
-import com.centreon.aggregator.service.common.AggregatedValue;
-import com.centreon.aggregator.service.common.AggregationTask;
-import com.centreon.aggregator.service.common.AggregationUnit;
+import com.centreon.aggregator.service.common.*;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 
@@ -25,11 +22,11 @@ public class RrdAggregationTask extends AggregationTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(RrdAggregationTask.class);
 
     private final RRDQueries rrdQueries;
-    private final List<UUID> serviceIds;
+    private final List<IdService> serviceIds;
 
 
     public RrdAggregationTask(Environment env, RRDQueries rrdQueries, ErrorFileLogger errorFileLogger,
-                              List<UUID> serviceIds, AggregationUnit aggregationUnit, LocalDateTime now,
+                              List<IdService> serviceIds, AggregationUnit aggregationUnit, LocalDateTime now,
                               AtomicInteger counter, AtomicInteger progressCounter) {
         super(env, errorFileLogger, counter, progressCounter, aggregationUnit, now);
         this.rrdQueries = rrdQueries;
@@ -38,7 +35,7 @@ public class RrdAggregationTask extends AggregationTask {
 
     @Override
     public void run() {
-        for (UUID service : serviceIds) {
+        for (IdService service : serviceIds) {
             try {
                 Thread.sleep(aggregationSelectionThrottleInMs);
             } catch (InterruptedException e) {
@@ -53,25 +50,25 @@ public class RrdAggregationTask extends AggregationTask {
         countDownLatch.countDown();
     }
 
-    private void processAggregationForService(UUID service) {
+    private void processAggregationForService(IdService service) {
         switch (aggregationUnit) {
             case HOUR:
                 // No op
                 return;
             case DAY:
-                final Stream<Map.Entry<Long, List<Row>>> aggregationForDay = rrdQueries.getAggregationForDay(service, now);
+                final Stream<Map.Entry<TimeValueAsLong, List<Row>>> aggregationForDay = rrdQueries.getAggregationForDay(service, now);
                 final List<AggregatedRow> aggregatedRowsForDay = groupByIdMetric(aggregationForDay);
                 final List<ResultSetFuture> resultSetFuturesForDay = asyncInsertAggregatedValues(aggregatedRowsForDay, service);
                 throttleAsyncInsert(LOGGER, resultSetFuturesForDay, service.toString(), aggregatedRowsForDay.size());
                 return;
             case WEEK:
-                final Stream<Map.Entry<Long, List<Row>>> aggregationForWeek = rrdQueries.getAggregationForWeek(service, now);
+                final Stream<Map.Entry<TimeValueAsLong, List<Row>>> aggregationForWeek = rrdQueries.getAggregationForWeek(service, now);
                 final List<AggregatedRow> aggregatedRowsForWeek = groupByIdMetric(aggregationForWeek);
                 final List<ResultSetFuture> resultSetFuturesForWeek = asyncInsertAggregatedValues(aggregatedRowsForWeek, service);
                 throttleAsyncInsert(LOGGER, resultSetFuturesForWeek, service.toString(), aggregatedRowsForWeek.size());
                 return;
             case MONTH:
-                final Stream<Map.Entry<Long, List<Row>>> aggregationForMonth = rrdQueries.getAggregationForMonth(service, now);
+                final Stream<Map.Entry<TimeValueAsLong, List<Row>>> aggregationForMonth = rrdQueries.getAggregationForMonth(service, now);
                 final List<AggregatedRow> aggregatedRowsForMonth = groupByIdMetric(aggregationForMonth);
                 final List<ResultSetFuture> resultSetFuturesForMonth = asyncInsertAggregatedValues(aggregatedRowsForMonth, service);
                 throttleAsyncInsert(LOGGER, resultSetFuturesForMonth, service.toString(), aggregatedRowsForMonth.size());
@@ -79,7 +76,7 @@ public class RrdAggregationTask extends AggregationTask {
         }
     }
 
-    private List<ResultSetFuture> asyncInsertAggregatedValues(List<AggregatedRow> aggregatedRows, UUID service) {
+    private List<ResultSetFuture> asyncInsertAggregatedValues(List<AggregatedRow> aggregatedRows, IdService service) {
         return  aggregatedRows
                 .stream()
                 .map(aggregatedRow -> rrdQueries.insertAggregationFor(aggregationUnit, now, service, aggregatedRow))
@@ -87,19 +84,15 @@ public class RrdAggregationTask extends AggregationTask {
     }
 
 
-    private List<AggregatedRow> groupByIdMetric(Stream<Map.Entry<Long, List<Row>>> entries) {
+    private List<AggregatedRow> groupByIdMetric(Stream<Map.Entry<TimeValueAsLong, List<Row>>> entries) {
         return entries
                 .flatMap(entry -> {
-
-                    // Map<Id_metric, List<AggregatedValue>>
-                    // Map<id_metric, AggregatedValue>
-                    final Long previousTimeValue = entry.getKey();
-                    final Map<Integer, AggregatedValue> groupedByIdMetric = entry.getValue()
+                    final TimeValueAsLong previousTimeValue = entry.getKey();
+                    final Map<IdMetric, AggregatedValue> groupedByIdMetric = entry.getValue()
                             .stream()
-                            .filter(row -> !row.isNull("sum"))
-                            .filter(row -> row.getInt("count")>0)
+                            .filter(row -> !row.isNull("sum") && row.getInt("count")>0)
                             .collect(groupingBy(
-                                    row -> row.getInt("id_metric"),
+                                    row -> new IdMetric(row.getInt("id_metric")),
                                     mapping(row -> {
                                                 Float min = row.isNull("min") ? null: row.getFloat("min");
                                                 Float max = row.isNull("max") ? null: row.getFloat("max");

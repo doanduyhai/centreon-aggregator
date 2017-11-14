@@ -21,6 +21,7 @@ import org.springframework.core.env.Environment;
 import com.centreon.aggregator.AbstractCassandraTest;
 import com.centreon.aggregator.repository.AnalyticsQueries;
 import com.centreon.aggregator.service.FakeEnv;
+import com.centreon.aggregator.service.common.IdMetric;
 import com.datastax.driver.core.Row;
 
 
@@ -54,13 +55,13 @@ public class AnalyticsAggregationTaskTest extends AbstractCassandraTest {
     @Test
     public void should_aggregate_for_day() throws Exception {
         //Given
-        final int idMetric = RandomUtils.nextInt(0, Integer.MAX_VALUE);
+        final IdMetric idMetric = new IdMetric(RandomUtils.nextInt(0, Integer.MAX_VALUE));
         final int hour = RandomUtils.nextInt(0, 23);
         final LocalDateTime now = getLocalDateTimeFromHour(hour);
         final long hourAsLong = HOUR.toLongFormat(now);
         final Map<String, Object> params = new HashMap<>();
         params.put("hour", hourAsLong);
-        params.put("id_metric", idMetric);
+        params.put("id_metric", idMetric.value);
         params.put("tick11", SECOND_FORMATTER.format(now));
         params.put("tick12", SECOND_FORMATTER.format(now.plusMinutes(10)));
         params.put("tick13", SECOND_FORMATTER.format(now.plusMinutes(12)));
@@ -95,12 +96,12 @@ public class AnalyticsAggregationTaskTest extends AbstractCassandraTest {
 
     @Test
     public void should_aggregate_for_week() throws Exception {
-        final int idMetric = RandomUtils.nextInt(0, Integer.MAX_VALUE);
+        final IdMetric idMetric = new IdMetric(RandomUtils.nextInt(0, Integer.MAX_VALUE));
         final LocalDateTime now = getLocalDateTimeFromWeekDay(0);
         final long dayAsLong = DAY.toLongFormat(now);
         final Map<String, Object> params = new HashMap<>();
         params.put("day", dayAsLong);
-        params.put("id_metric", idMetric);
+        params.put("id_metric", idMetric.value);
         params.put("tick11", SECOND_FORMATTER.format(now));
         params.put("tick12", SECOND_FORMATTER.format(now.plusHours(1)));
         params.put("tick13", SECOND_FORMATTER.format(now.plusHours(2)));
@@ -136,13 +137,13 @@ public class AnalyticsAggregationTaskTest extends AbstractCassandraTest {
     @Test
     public void should_aggregate_for_month() throws Exception {
         //Given
-        final int idMetric = RandomUtils.nextInt(0, Integer.MAX_VALUE);
+        final IdMetric idMetric = new IdMetric(RandomUtils.nextInt(0, Integer.MAX_VALUE));
         final int day = RandomUtils.nextInt(1, 31);
         final LocalDateTime now = getLocalDateTimeFromMonthDay(day);
         final long dayAsLong = DAY.toLongFormat(now);
         final Map<String, Object> params = new HashMap<>();
         params.put("day", dayAsLong);
-        params.put("id_metric", idMetric);
+        params.put("id_metric", idMetric.value);
         params.put("tick11", SECOND_FORMATTER.format(now));
         params.put("tick12", SECOND_FORMATTER.format(now.plusHours(1)));
         params.put("tick13", SECOND_FORMATTER.format(now.plusHours(2)));

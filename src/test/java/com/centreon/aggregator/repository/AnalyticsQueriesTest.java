@@ -17,9 +17,7 @@ import org.junit.After;
 import org.junit.Test;
 
 import com.centreon.aggregator.AbstractCassandraTest;
-import com.centreon.aggregator.service.common.AggregatedRow;
-import com.centreon.aggregator.service.common.AggregatedValue;
-import com.centreon.aggregator.service.common.AggregationUnit;
+import com.centreon.aggregator.service.common.*;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 
@@ -35,7 +33,7 @@ public class AnalyticsQueriesTest extends AbstractCassandraTest {
     @Test
     public void should_get_aggregation_for_day() throws Exception {
         //Given
-        final int idMetric = RandomUtils.nextInt(0, Integer.MAX_VALUE);
+        final IdMetric idMetric = new IdMetric(RandomUtils.nextInt(0, Integer.MAX_VALUE));
 
         final int hour = RandomUtils.nextInt(0, 23);
 
@@ -43,7 +41,7 @@ public class AnalyticsQueriesTest extends AbstractCassandraTest {
         final long hourAsLong = HOUR.toLongFormat(now);
         final Map<String, Object> params = new HashMap<>();
         params.put("hour", hourAsLong);
-        params.put("id_metric", idMetric);
+        params.put("id_metric", idMetric.value);
         params.put("tick11", SECOND_FORMATTER.format(now));
         params.put("tick12", SECOND_FORMATTER.format(now.plusMinutes(10)));
         params.put("tick13", SECOND_FORMATTER.format(now.plusMinutes(12)));
@@ -53,13 +51,13 @@ public class AnalyticsQueriesTest extends AbstractCassandraTest {
         SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/AnalyticsQueries/insert_data_for_hour.cql", params);
 
         //When
-        final Stream<Map.Entry<Long, Row>> aggregationForDay = ANALYTICS_QUERIES.getAggregationForDay(idMetric, now);
-        final Map<Long, Row> results = aggregationForDay.collect(
+        final Stream<Map.Entry<TimeValueAsLong, Row>> aggregationForDay = ANALYTICS_QUERIES.getAggregationForDay(idMetric, now);
+        final Map<TimeValueAsLong, Row> results = aggregationForDay.collect(
                 Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         //Then
         assertThat(results).hasSize(1);
-        final Row dayMetrics = results.get(hourAsLong);
+        final Row dayMetrics = results.get(new TimeValueAsLong(hourAsLong));
 
         assertThat(dayMetrics.getFloat("min")).isEqualTo(3.0f);
         assertThat(dayMetrics.getFloat("max")).isEqualTo(11.0f);
@@ -70,13 +68,13 @@ public class AnalyticsQueriesTest extends AbstractCassandraTest {
     @Test
     public void should_get_aggregation_for_week() throws Exception {
         //Given
-        final int idMetric = RandomUtils.nextInt(0, Integer.MAX_VALUE);
+        final IdMetric idMetric = new IdMetric(RandomUtils.nextInt(0, Integer.MAX_VALUE));
 
         final LocalDateTime now = getLocalDateTimeFromWeekDay(0);
         final long dayAsLong = DAY.toLongFormat(now);
         final Map<String, Object> params = new HashMap<>();
         params.put("day", dayAsLong);
-        params.put("id_metric", idMetric);
+        params.put("id_metric", idMetric.value);
         params.put("tick11", SECOND_FORMATTER.format(now));
         params.put("tick12", SECOND_FORMATTER.format(now.plusHours(1)));
         params.put("tick13", SECOND_FORMATTER.format(now.plusHours(2)));
@@ -86,13 +84,13 @@ public class AnalyticsQueriesTest extends AbstractCassandraTest {
         SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/AnalyticsQueries/insert_data_for_day.cql", params);
 
         //When
-        final Stream<Map.Entry<Long, Row>> aggregationForWeek = ANALYTICS_QUERIES.getAggregationForWeek(idMetric, now);
+        final Stream<Map.Entry<TimeValueAsLong, Row>> aggregationForWeek = ANALYTICS_QUERIES.getAggregationForWeek(idMetric, now);
 
-        final Map<Long, Row> results = aggregationForWeek.collect(
+        final Map<TimeValueAsLong, Row> results = aggregationForWeek.collect(
                 Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         //Then
-        final Row weekMetrics = results.get(dayAsLong);
+        final Row weekMetrics = results.get(new TimeValueAsLong(dayAsLong));
 
         assertThat(weekMetrics.getFloat("min")).isEqualTo(1.0f);
         assertThat(weekMetrics.getFloat("max")).isEqualTo(11.0f);
@@ -103,7 +101,7 @@ public class AnalyticsQueriesTest extends AbstractCassandraTest {
     @Test
     public void should_get_aggregation_for_month() throws Exception {
         //Given
-        final int idMetric = RandomUtils.nextInt(0, Integer.MAX_VALUE);
+        final IdMetric idMetric = new IdMetric(RandomUtils.nextInt(0, Integer.MAX_VALUE));
 
         final int day = RandomUtils.nextInt(1, 31);
 
@@ -111,7 +109,7 @@ public class AnalyticsQueriesTest extends AbstractCassandraTest {
         final long dayAsLong = DAY.toLongFormat(now);
         final Map<String, Object> params = new HashMap<>();
         params.put("day", dayAsLong);
-        params.put("id_metric", idMetric);
+        params.put("id_metric", idMetric.value);
         params.put("tick11", SECOND_FORMATTER.format(now));
         params.put("tick12", SECOND_FORMATTER.format(now.plusHours(1)));
         params.put("tick13", SECOND_FORMATTER.format(now.plusHours(2)));
@@ -121,13 +119,13 @@ public class AnalyticsQueriesTest extends AbstractCassandraTest {
         SCRIPT_EXECUTOR.executeScriptTemplate("cassandra/AnalyticsQueries/insert_data_for_day.cql", params);
 
         //When
-        final Stream<Map.Entry<Long, Row>> aggregationForMonth = ANALYTICS_QUERIES.getAggregationForMonth(idMetric, now);
+        final Stream<Map.Entry<TimeValueAsLong, Row>> aggregationForMonth = ANALYTICS_QUERIES.getAggregationForMonth(idMetric, now);
 
-        final Map<Long, Row> results = aggregationForMonth.collect(
+        final Map<TimeValueAsLong, Row> results = aggregationForMonth.collect(
                 Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         //Then
-        final Row monthMetrics = results.get(dayAsLong);
+        final Row monthMetrics = results.get(new TimeValueAsLong(dayAsLong));
 
         assertThat(monthMetrics.getFloat("min")).isEqualTo(1.0f);
         assertThat(monthMetrics.getFloat("max")).isEqualTo(11.0f);
@@ -138,12 +136,12 @@ public class AnalyticsQueriesTest extends AbstractCassandraTest {
     @Test
     public void should_insert_aggregation_for_day() throws Exception {
         //Given
-        final int idMetric = RandomUtils.nextInt(0, Integer.MAX_VALUE);
+        final IdMetric idMetric = new IdMetric(RandomUtils.nextInt(0, Integer.MAX_VALUE));
         final AggregationUnit aggregationUnit = MONTH;
         //20171012
         final LocalDateTime now = getLocalDateTimeFromMonthDay(12);
         final AggregatedValue aggregatedValue = new AggregatedValue(12.0f, 5.0f, 12.4f, 4);
-        final AggregatedRow aggregatedRow = new AggregatedRow(idMetric, DAY.toLongFormat(now), aggregatedValue);
+        final AggregatedRow aggregatedRow = new AggregatedRow(idMetric, new TimeValueAsLong(DAY.toLongFormat(now)), aggregatedValue);
 
         //When
         final ResultSetFuture resultSetFuture = ANALYTICS_QUERIES.insertAggregationFor(aggregationUnit, now, aggregatedRow);

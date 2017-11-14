@@ -22,8 +22,8 @@ import org.springframework.stereotype.Service;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
 import com.centreon.aggregator.repository.AnalyticsQueries;
 import com.centreon.aggregator.repository.MetaDataQueries;
-import com.centreon.aggregator.service.common.AggregationTask;
 import com.centreon.aggregator.service.common.AggregationUnit;
+import com.centreon.aggregator.service.common.IdMetric;
 
 @Service
 public class AnalyticsAggregationService {
@@ -68,7 +68,7 @@ public class AnalyticsAggregationService {
         final AtomicInteger counter = new AtomicInteger(0);
         final AtomicInteger progressCounter = new AtomicInteger(0);
 
-        final List<Integer> metricIds = new ArrayList<>(aggregationBatchSize);
+        final List<IdMetric> metricIds = new ArrayList<>(aggregationBatchSize);
 
         final List<AnalyticsAggregationTask> taskList = new ArrayList<>();
 

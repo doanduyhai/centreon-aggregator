@@ -101,6 +101,11 @@ public enum  AggregationUnit {
             .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 10)
             .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 10)
             .toFormatter();
+
+    public TimeValueAsLong toTimeValue(LocalDateTime date) {
+        return new TimeValueAsLong(toLongFormat(date));
+    }
+
     public abstract long toLongFormat(LocalDateTime date);
     public abstract int aggregationTimeOutInSec();
     public abstract AggregationUnit previousAggregationUnit();

@@ -2,14 +2,14 @@ package com.centreon.aggregator.service.common;
 
 public class AggregatedRow {
 
-    public final int idMetric;
-    public final long timeValue;
+    public final IdMetric idMetric;
+    public final TimeValueAsLong timeValue;
     public final Float min;
     public final Float max;
     public final Float sum;
     public final int count;
 
-    public AggregatedRow(int idMetric, long timeValue, AggregatedValue aggregatedValue) {
+    public AggregatedRow(IdMetric idMetric, TimeValueAsLong timeValue, AggregatedValue aggregatedValue) {
         this.idMetric = idMetric;
         this.timeValue = timeValue;
         this.min = aggregatedValue.min;

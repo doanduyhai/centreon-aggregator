@@ -23,6 +23,7 @@ import com.centreon.aggregator.error_handling.ErrorFileLogger;
 import com.centreon.aggregator.service.FakeEnv;
 import com.centreon.aggregator.service.FakeExecutorService;
 import com.centreon.aggregator.service.common.AggregationTask;
+import com.centreon.aggregator.service.common.IdService;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RrdAggregationServiceTest {
@@ -68,12 +69,12 @@ public class RrdAggregationServiceTest {
     @Test
     public void should_aggregate() throws Exception {
         //Given
-        final UUID service1 = new UUID(0, 1);
-        final UUID service2 = new UUID(0, 2);
-        final UUID service3 = new UUID(0, 3);
-        final UUID service4 = new UUID(0, 4);
+        final IdService service1 = new IdService(new UUID(0, 1));
+        final IdService service2 = new IdService(new UUID(0, 2));
+        final IdService service3 = new IdService(new UUID(0, 3));
+        final IdService service4 = new IdService(new UUID(0, 4));
 
-        final List<UUID> services = Arrays.asList(service1, service2, service3, service4);
+        final List<IdService> services = Arrays.asList(service1, service2, service3, service4);
         when(metaDataQueries.getDistinctServiceIdStream()).thenReturn(services.stream());
 
         final RrdAggregationService aggregationService = new RrdAggregationService(env, metaDataQueries,

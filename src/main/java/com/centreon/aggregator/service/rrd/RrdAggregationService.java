@@ -18,6 +18,7 @@ import com.centreon.aggregator.repository.MetaDataQueries;
 import com.centreon.aggregator.repository.RRDQueries;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
 import com.centreon.aggregator.service.common.AggregationUnit;
+import com.centreon.aggregator.service.common.IdService;
 
 @Service
 public class RrdAggregationService {
@@ -62,7 +63,7 @@ public class RrdAggregationService {
         final AtomicInteger counter = new AtomicInteger(0);
         final AtomicInteger progressCounter = new AtomicInteger(0);
 
-        final List<UUID> services = new ArrayList<>(aggregationBatchSize);
+        final List<IdService> services = new ArrayList<>(aggregationBatchSize);
 
         final List<RrdAggregationTask> taskList = new ArrayList<>();
 
