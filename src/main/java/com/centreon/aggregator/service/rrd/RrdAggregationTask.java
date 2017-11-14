@@ -5,7 +5,6 @@ import static java.util.stream.Collectors.*;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -26,20 +25,20 @@ public class RrdAggregationTask extends AggregationTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(RrdAggregationTask.class);
 
     private final RRDQueries rrdQueries;
-    private final List<UUID> serviceRange;
+    private final List<UUID> serviceIds;
 
 
     public RrdAggregationTask(Environment env, RRDQueries rrdQueries, ErrorFileLogger errorFileLogger,
-                              List<UUID> serviceRange, AggregationUnit aggregationUnit, LocalDateTime now,
+                              List<UUID> serviceIds, AggregationUnit aggregationUnit, LocalDateTime now,
                               AtomicInteger counter, AtomicInteger progressCounter) {
         super(env, errorFileLogger, counter, progressCounter, aggregationUnit, now);
         this.rrdQueries = rrdQueries;
-        this.serviceRange = serviceRange;
+        this.serviceIds = serviceIds;
     }
 
     @Override
     public void run() {
-        for (UUID service : serviceRange) {
+        for (UUID service : serviceIds) {
             try {
                 Thread.sleep(aggregationSelectionThrottleInMs);
             } catch (InterruptedException e) {
@@ -49,8 +48,8 @@ public class RrdAggregationTask extends AggregationTask {
             processAggregationForService(service);
         }
         LOGGER.info("Finish aggregating for service range [{} - {}]",
-                serviceRange.get(0),
-                serviceRange.get(serviceRange.size()-1));
+                serviceIds.get(0),
+                serviceIds.get(serviceIds.size()-1));
         countDownLatch.countDown();
     }
 
@@ -91,10 +90,14 @@ public class RrdAggregationTask extends AggregationTask {
     private List<AggregatedRow> groupByIdMetric(Stream<Map.Entry<Long, List<Row>>> entries) {
         return entries
                 .flatMap(entry -> {
+
+                    // Map<Id_metric, List<AggregatedValue>>
+                    // Map<id_metric, AggregatedValue>
                     final Long previousTimeValue = entry.getKey();
                     final Map<Integer, AggregatedValue> groupedByIdMetric = entry.getValue()
                             .stream()
                             .filter(row -> !row.isNull("sum"))
+                            .filter(row -> row.getInt("count")>0)
                             .collect(groupingBy(
                                     row -> row.getInt("id_metric"),
                                     mapping(row -> {

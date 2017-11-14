@@ -74,7 +74,7 @@ public class RrdAggregationServiceTest {
         final UUID service4 = new UUID(0, 4);
 
         final List<UUID> services = Arrays.asList(service1, service2, service3, service4);
-        when(metaDataQueries.getDistinctServicesStream()).thenReturn(services.stream());
+        when(metaDataQueries.getDistinctServiceIdStream()).thenReturn(services.stream());
 
         final RrdAggregationService aggregationService = new RrdAggregationService(env, metaDataQueries,
                 rrdQueries, executorService, errorFileLogger);

@@ -120,8 +120,8 @@ public class AnalyticsQueries {
         return this.session.executeAsync(bs);
     }
 
-    private Stream<Map.Entry<Long, Row>> transformResultSetFutures(Stream<Long> timeValues, Integer idMetric, AggregationUnit aggregationUnit) {
-        return timeValues
+    private Stream<Map.Entry<Long, Row>> transformResultSetFutures(Stream<Long> previousTimeValues, Integer idMetric, AggregationUnit aggregationUnit) {
+        return previousTimeValues
                 .map(previousTimeUnit -> {
                     final BoundStatement bs = GENERIC_SELECT_AGGREGATE_PS.bind(idMetric, aggregationUnit.previousAggregationUnit().name(), previousTimeUnit);
                     return immutableEntry(previousTimeUnit, session.executeAsync(bs));

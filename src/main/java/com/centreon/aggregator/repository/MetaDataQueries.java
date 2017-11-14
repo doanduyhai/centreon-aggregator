@@ -51,7 +51,7 @@ public class MetaDataQueries {
                 format(SELECT_DISTINCT_METRIC_ID, dseTopology.keyspace)));
     }
 
-    public Stream<UUID> getDistinctServicesStream() {
+    public Stream<UUID> getDistinctServiceIdStream() {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Get distinct service ids");
         }

@@ -27,7 +27,7 @@ public class MetaDataQueriesTest extends AbstractCassandraTest  {
         SCRIPT_EXECUTOR.executeScript("cassandra/MetaDataQueries/insert_service_meta.cql");
 
         //When
-        final Set<UUID> uuids = METADATA_QUERIES.getDistinctServicesStream().collect(toSet());
+        final Set<UUID> uuids = METADATA_QUERIES.getDistinctServiceIdStream().collect(toSet());
 
         //Then
         assertThat(uuids).contains(uuid1, uuid2, uuid3, uuid4);

@@ -11,7 +11,6 @@ public interface EnvParams {
     String DSE_CLUSTER_NAME = "dse.cluster_name";
     String DSE_CLUSTER_NAME_DEFAULT = "Test Cluster";
 
-
     String DSE_LOCAL_DC = "dse.local_DC";
     String DSE_LOCAL_DC_DEFAULT = "dc1";
 

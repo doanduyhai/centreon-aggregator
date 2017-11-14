@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +17,6 @@ import org.springframework.stereotype.Service;
 import com.centreon.aggregator.repository.MetaDataQueries;
 import com.centreon.aggregator.repository.RRDQueries;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
-import com.centreon.aggregator.service.common.AggregationTask;
 import com.centreon.aggregator.service.common.AggregationUnit;
 
 @Service
@@ -68,7 +66,7 @@ public class RrdAggregationService {
 
         final List<RrdAggregationTask> taskList = new ArrayList<>();
 
-        metaDataQueries.getDistinctServicesStream()
+        metaDataQueries.getDistinctServiceIdStream()
                 .forEach(service -> {
                     services.add(service);
                     if (services.size() == aggregationBatchSize) {
