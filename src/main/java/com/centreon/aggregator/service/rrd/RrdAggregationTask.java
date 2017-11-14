@@ -17,6 +17,9 @@ import com.centreon.aggregator.service.common.*;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 
+/**
+ * Runnable task to aggregate into rrd_aggregated table
+ */
 public class RrdAggregationTask extends AggregationTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RrdAggregationTask.class);
@@ -50,6 +53,9 @@ public class RrdAggregationTask extends AggregationTask {
         countDownLatch.countDown();
     }
 
+    /**
+     * Call the correct query method depending on the aggregation unit
+     */
     private void processAggregationForService(IdService service) {
         switch (aggregationUnit) {
             case HOUR:
@@ -76,6 +82,9 @@ public class RrdAggregationTask extends AggregationTask {
         }
     }
 
+    /**
+     * Insert asynchronously the list of rows and return a list of ResultSetFuture
+     */
     private List<ResultSetFuture> asyncInsertAggregatedValues(List<AggregatedRow> aggregatedRows, IdService service) {
         return  aggregatedRows
                 .stream()
@@ -83,16 +92,26 @@ public class RrdAggregationTask extends AggregationTask {
                 .collect(toList());
     }
 
-
+    /**
+     * The entry is a stream of couple [TimeValueAsLong, List[Row]]
+     * <br/>
+     * <br/>
+     * The List[Row] contains several rows, one for each distinct metric id. The idea is to perform a GROUP BY metric_id
+     * to have a List[AggregatedRow]
+     */
     private List<AggregatedRow> groupByIdMetric(Stream<Map.Entry<TimeValueAsLong, List<Row>>> entries) {
         return entries
                 .flatMap(entry -> {
                     final TimeValueAsLong previousTimeValue = entry.getKey();
                     final Map<IdMetric, AggregatedValue> groupedByIdMetric = entry.getValue()
                             .stream()
+                            // List<Row>
                             .filter(row -> !row.isNull("sum") && row.getInt("count")>0)
+
+                            // Map<IdMetric, List<Row>>
                             .collect(groupingBy(
                                     row -> new IdMetric(row.getInt("id_metric")),
+                                    // Map<IdMetric, AggregatedValue>
                                     mapping(row -> {
                                                 Float min = row.isNull("min") ? null: row.getFloat("min");
                                                 Float max = row.isNull("max") ? null: row.getFloat("max");
@@ -104,7 +123,8 @@ public class RrdAggregationTask extends AggregationTask {
                             ));
 
                     return groupedByIdMetric.entrySet().stream()
-                            .map(groupBY -> new AggregatedRow(groupBY.getKey(), previousTimeValue, groupBY.getValue()));
+                            .map( (Map.Entry<IdMetric, AggregatedValue> groupBY) ->
+                                    new AggregatedRow(groupBY.getKey(), previousTimeValue, groupBY.getValue()));
                 })
                 .collect(toList());
 

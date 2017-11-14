@@ -1,5 +1,11 @@
 package com.centreon.aggregator.configuration;
 
+
+/**
+ *
+ * Centralize all Spring configuration parameters here with their default values
+ *
+ */
 public interface EnvParams {
 
     String DSE_CONTACT_POINT = "dse.contact_point";

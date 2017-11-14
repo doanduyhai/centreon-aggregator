@@ -27,6 +27,8 @@ import com.datastax.driver.core.*;
 
 /**
  *
+ *  Repository class to read and write into the following table:
+ *  <br/>
  *  CREATE TABLE IF NOT EXISTS centreon.analytics_aggregated(
  *      id_metric int,
  *      aggregation_unit text,
@@ -72,6 +74,13 @@ public class AnalyticsQueries {
                 String.format(GENERIC_INSERT_AGGREGATE, dseTopology.keyspace)));
     }
 
+    /**
+     * For a given DAY
+     *      fetch the hour from 0 to 23
+     *      for each couple [id_metric, hourAsLong]
+     *          aggregate the min, max, sum and count
+     *      return a stream of couple [HOUR as long, row]
+     */
     public Stream<Map.Entry<TimeValueAsLong, Row>> getAggregationForDay(IdMetric idMetric, LocalDateTime now) {
         return transformResultSetFutures(IntStream.range(0, 23)
                 .mapToObj(hour -> now.withHour(hour))
@@ -79,6 +88,13 @@ public class AnalyticsQueries {
 
     }
 
+    /**
+     * For a given WEEK
+     *      fetch the day of week from 0 (MONDAY) to 6 (SUNDAY)
+     *      for each couple [id_metric, dayAsLong]
+     *          aggregate the min, max, sum and count and GROUP BY id_metric
+     *      return a stream of couple [DAY as long, row]
+     */
     public Stream<Map.Entry<TimeValueAsLong, Row>> getAggregationForWeek(IdMetric idMetric, LocalDateTime now) {
         final LocalDateTime firstDayOfWeek = now.with(DayOfWeek.MONDAY);
         return transformResultSetFutures(IntStream.range(0, 6)
@@ -86,12 +102,23 @@ public class AnalyticsQueries {
                 .map(day -> DAY.toTimeValue(day)), idMetric, WEEK);
     }
 
+    /**
+     * For a given MONTH
+     *      fetch the day of week from 1 to 31
+     *      for each couple [serviceId, dayAsLong]
+     *          aggregate the min, max, sum and count and GROUP BY id_metric
+     *      return a stream of couple [DAY as long, List of rows]
+     */
     public Stream<Map.Entry<TimeValueAsLong, Row>> getAggregationForMonth(IdMetric idMetric, LocalDateTime now) {
         return transformResultSetFutures(IntStream.range(1, 31)
                 .mapToObj(day -> now.withDayOfMonth(day))
                 .map(day -> DAY.toTimeValue(day)), idMetric, MONTH);
     }
 
+    /**
+     *
+     * Insert asynchronously a new aggregated row
+     */
     public ResultSetFuture insertAggregationFor(AggregationUnit aggregationUnit, LocalDateTime currentTimeValue, AggregatedRow aggregatedRow) {
         final BoundStatement bs = GENERIC_INSERT_AGGREGATE_PS.bind();
         bs.setString("aggregation_unit", aggregationUnit.name());

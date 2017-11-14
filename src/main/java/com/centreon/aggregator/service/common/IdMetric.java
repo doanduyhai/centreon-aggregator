@@ -2,6 +2,9 @@ package com.centreon.aggregator.service.common;
 
 import java.util.Objects;
 
+/**
+ * Meaning full definition of an metric id, instead of just an Integer
+ */
 public class IdMetric  {
 
     public final int value;

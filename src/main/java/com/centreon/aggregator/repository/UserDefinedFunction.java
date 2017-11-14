@@ -2,6 +2,19 @@ package com.centreon.aggregator.repository;
 
 public class UserDefinedFunction {
 
+    /**
+     * User defined function to format time value to a human readable date string
+     *
+     * Syntax to create this function in CQL:
+     * <br/>
+     * <br/>
+     * CREATE OR REPLACE FUNCTION centreon.formatLongToDate(time_unit bigint) <br/>
+     * RETURNS NULL ON NULL INPUT <br/>
+     * RETURNS text <br/>
+     * LANGUAGE java <br/>
+     * AS $$ &lt;method body below&gt; $$;
+     * <br/>
+     */
     public static String formatLongToDate(Long time_unit) {
         final String rawDate = time_unit + "";
         final double yearDigitInSecondPrecision = time_unit / Math.pow(10, 13);

@@ -18,6 +18,8 @@ import com.datastax.driver.core.*;
 import com.datastax.driver.core.Session;
 
 /**
+ *   Repository class to read data from the below tables
+ *
  *   CREATE TABLE IF NOT EXISTS centreon.service_meta(
  *       service uuid,
  *       id_metric int,
@@ -53,6 +55,14 @@ public class MetaDataQueries {
                 format(SELECT_DISTINCT_METRIC_ID, dseTopology.keyspace)));
     }
 
+    /**
+     *
+     * Get all distinct service id from the database.
+     * <br/>
+     * <br/>
+     * <strong>WARNING: this solution will NOT scale over 1000 000 ids. Consider using a caching solution like REDIS</strong>
+     *
+     */
     public Stream<IdService> getDistinctServiceIdStream() {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Get distinct service ids");
@@ -67,6 +77,14 @@ public class MetaDataQueries {
         return targetStream.map(row -> new IdService(row.getUUID("service")));
     }
 
+    /**
+     *
+     * Get all distinct metric id from the database.
+     * <br/>
+     * <br/>
+     * <strong>WARNING: this solution will NOT scale over 1000 000 ids. Consider using a caching solution like REDIS</strong>
+     *
+     */
     public Stream<IdMetric> getDistinctMetricIdsStream() {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Get distinct metric ids");

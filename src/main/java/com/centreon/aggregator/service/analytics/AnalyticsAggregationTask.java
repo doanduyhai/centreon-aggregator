@@ -18,6 +18,9 @@ import com.centreon.aggregator.service.common.*;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 
+/**
+ * Runnable task to aggregate into rrd_aggregated table
+ */
 public class AnalyticsAggregationTask extends AggregationTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AnalyticsAggregationTask.class);
@@ -51,6 +54,9 @@ public class AnalyticsAggregationTask extends AggregationTask {
         countDownLatch.countDown();
     }
 
+    /**
+     * Call the correct query method depending on the aggregation unit
+     */
     private void processAggregationForMetric(IdMetric idMetric) {
         switch (aggregationUnit) {
             case HOUR:
@@ -77,6 +83,9 @@ public class AnalyticsAggregationTask extends AggregationTask {
         }
     }
 
+    /**
+     * Insert asynchronously the list of rows and return a list of ResultSetFuture
+     */
     private List<ResultSetFuture> asyncInsertAggregatedValues(List<AggregatedRow> aggregatedRows) {
         return  aggregatedRows
                 .stream()
@@ -85,6 +94,12 @@ public class AnalyticsAggregationTask extends AggregationTask {
     }
 
 
+    /**
+     * The entry is a stream of couple [TimeValueAsLong, Row]
+     * <br/>
+     * <br/>
+     * We extract data from the row into an AggregatedValue and return a list of AggregatedRow
+     */
     private List<AggregatedRow> mapToAggregatedRow(IdMetric idMetric, Stream<Map.Entry<TimeValueAsLong, Row>> entries) {
         return entries
                 .filter(entry -> !entry.getValue().isNull("sum"))

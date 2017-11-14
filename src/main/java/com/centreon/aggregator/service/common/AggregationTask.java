@@ -44,6 +44,22 @@ public abstract class AggregationTask implements Runnable {
         this.now = now;
     }
 
+    /**
+     * Throttle the asynchronous insert into DSE.
+     * <br/>
+     * <br/>
+     * Foreach ResultSetFuture:
+     *      call a blocking get on it
+     *      if the query times out
+     *          log the corresponding service/metric id into the error file for later retry
+     *      else
+     *          increment a shared, thread-safe counter and progressCounter
+     *          if the counter exceed the parameter `dse.async_batch_size`
+     *              sleep for `dse.async_batch_sleep_in_ms`
+     *              reset the counter to 0
+     *          if the progress counter exceed `dse.async_batch_size` * `dse.insert_progress_display_multiplier`
+     *              display progress message in the log
+     */
     protected void throttleAsyncInsert(Logger logger, List<ResultSetFuture> resultSetFutures, String serviceOrMetricId, int rowsToInsertCount) {
         boolean error = false;
         for (ResultSetFuture future : resultSetFutures) {

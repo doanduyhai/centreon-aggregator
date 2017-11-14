@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 
 /**
- * Default factory for executor thread
+ * Default factory for thread pool. This class serves mainly to set a meaning full thread name
  */
 public class DefaultExecutorThreadFactory implements ThreadFactory {
 

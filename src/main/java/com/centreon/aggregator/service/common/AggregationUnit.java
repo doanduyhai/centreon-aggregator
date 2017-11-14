@@ -6,6 +6,9 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 
 
+/**
+ * Enum to define different aggregation unit and behavior
+ */
 public enum  AggregationUnit {
 
     HOUR {
@@ -102,11 +105,27 @@ public enum  AggregationUnit {
             .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 10)
             .toFormatter();
 
+    /**
+     * For a given date, format this date to the long format but return a meaning full TimeValueAsLong class
+     */
     public TimeValueAsLong toTimeValue(LocalDateTime date) {
         return new TimeValueAsLong(toLongFormat(date));
     }
 
+    /**
+     *  For a given date, format this date to the long format
+     */
     public abstract long toLongFormat(LocalDateTime date);
+
+    /**
+     *
+     * Return a pre-defined timeout in sec for the aggregation SELECT statement depending on the aggregation unit
+     */
     public abstract int aggregationTimeOutInSec();
+
+    /**
+     *
+     * Return the previous aggregation level
+     */
     public abstract AggregationUnit previousAggregationUnit();
 }

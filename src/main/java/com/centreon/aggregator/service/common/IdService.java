@@ -3,6 +3,9 @@ package com.centreon.aggregator.service.common;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Meaning full definition of a service id, instead of just an UUID
+ */
 public class IdService {
 
     public final UUID value;

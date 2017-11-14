@@ -20,6 +20,9 @@ import org.springframework.core.env.Environment;
 import com.centreon.aggregator.async.DefaultExecutorThreadFactory;
 import com.centreon.aggregator.error_handling.ErrorFileLogger;
 
+/**
+ * Configuration bean for the aggregator itself
+ */
 @Configuration
 public class AggregatorConfiguration {
 
@@ -31,6 +34,17 @@ public class AggregatorConfiguration {
         this.env = env;
     }
 
+    /**
+     *
+     * Build the {@link com.centreon.aggregator.error_handling.ErrorFileLogger} singleton.
+     * <br/>
+     * <br/>
+     * Parameters used to build this singleton:
+     *
+     * <ul>
+     *     <li>dse.input_error_file</li>
+     * </ul>
+     */
     @Bean(destroyMethod = "close")
     public ErrorFileLogger getErrorFileLogger() {
         LOGGER.info("Initializing error file");
@@ -44,6 +58,21 @@ public class AggregatorConfiguration {
         }
     }
 
+    /**
+     *
+     * Build a custom thread pool to manage all aggregation tasks
+     * <br/>
+     * <br/>
+     * Parameters to configure the thread pool:
+     *
+     *
+     * <ul>
+     *     <li>dse.threadpool_core_size: number of threads, low watermark</li>
+     *     <li>dse.threadpool_max_core_size: max number of threads allowed for the pool, high watermark</li>
+     *     <li>dse.threadpool_keep_alive_ms: number of millisecs to keep a thread inactive before killing it</li>
+     *     <li>dse.threadpool_queue_size: size of thread queue. Tasks are enqueued when high watermark is reached. If the queue is reach the thread pool will start rejecting new tasks</li>
+     * </ul>
+     */
     @Bean("threadPoolExecutor")
     public ThreadPoolExecutor getExecutorService() {
         final int queueSize = Integer.parseInt(env.getProperty(AGGREGATION_THREAD_POOL_QUEUE_SIZE, AGGREGATION_THREAD_POOL_QUEUE_SIZE_DEFAULT));

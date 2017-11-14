@@ -25,6 +25,8 @@ import com.centreon.aggregator.service.common.TimeValueAsLong;
 import com.datastax.driver.core.*;
 
 /**
+ *   Repository to read and insert data into the below table:
+ *   <br/>
  *   CREATE TABLE IF NOT EXISTS centreon.rrd_aggregated(
  *       service uuid,
  *       aggregation_unit text, //HOUR, DAY, WEEK, MONTH
@@ -71,6 +73,13 @@ public class RRDQueries {
     }
 
 
+    /**
+     * For a given DAY
+     *      fetch the hour from 0 to 23
+     *      for each couple [serviceId, hourAsLong]
+     *          aggregate the min, max, sum and count and GROUP BY id_metric
+     *      return a stream of couple [HOUR as long, List of rows]
+     */
     public Stream<Map.Entry<TimeValueAsLong, List<Row>>> getAggregationForDay(IdService service, LocalDateTime now) {
         return transformResultSetFutures(IntStream.range(0, 23)
                 .mapToObj(hour -> now.withHour(hour))
@@ -78,6 +87,13 @@ public class RRDQueries {
 
     }
 
+    /**
+     * For a given WEEK
+     *      fetch the day of week from 0 (MONDAY) to 6 (SUNDAY)
+     *      for each couple [serviceId, dayAsLong]
+     *          aggregate the min, max, sum and count and GROUP BY id_metric
+     *      return a stream of couple [DAY as long, List of rows]
+     */
     public Stream<Map.Entry<TimeValueAsLong, List<Row>>> getAggregationForWeek(IdService service, LocalDateTime now) {
         final LocalDateTime firstDayOfWeek = now.with(DayOfWeek.MONDAY);
         return transformResultSetFutures(IntStream.range(0, 6)
@@ -85,12 +101,23 @@ public class RRDQueries {
                 .map(day -> DAY.toTimeValue(day)), service, WEEK, errorFileLogger);
     }
 
+    /**
+     * For a given MONTH
+     *      fetch the day of week from 1 to 31
+     *      for each couple [serviceId, dayAsLong]
+     *          aggregate the min, max, sum and count and GROUP BY id_metric
+     *      return a stream of couple [DAY as long, List of rows]
+     */
     public Stream<Map.Entry<TimeValueAsLong, List<Row>>> getAggregationForMonth(IdService service, LocalDateTime now) {
         return transformResultSetFutures(IntStream.range(1, 31)
                 .mapToObj(day -> now.withDayOfMonth(day))
                 .map(day -> DAY.toTimeValue(day)), service, MONTH, errorFileLogger);
     }
 
+    /**
+     *
+     * Insert asynchronously a new aggregated row
+     */
     public ResultSetFuture insertAggregationFor(AggregationUnit aggregationUnit, LocalDateTime currentTimeValue, IdService service, AggregatedRow aggregatedRow) {
         final BoundStatement bs = GENERIC_INSERT_AGGREGATE_PS.bind();
         bs.setUUID("service", service.value);

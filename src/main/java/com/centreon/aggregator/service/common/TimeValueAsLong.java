@@ -2,6 +2,9 @@ package com.centreon.aggregator.service.common;
 
 import java.util.Objects;
 
+/**
+ * Meaning full definition of a time value formatted as a long, instead of just a Long
+ */
 public class TimeValueAsLong {
 
     public final long value;

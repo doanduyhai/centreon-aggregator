@@ -20,6 +20,9 @@ import com.centreon.aggregator.error_handling.ErrorFileLogger;
 import com.centreon.aggregator.service.common.AggregationUnit;
 import com.centreon.aggregator.service.common.IdService;
 
+/**
+ * Main service to aggregate for rrd
+ */
 @Service
 public class RrdAggregationService {
 
@@ -53,6 +56,24 @@ public class RrdAggregationService {
         this.errorFileLogger = errorFileLogger;
     }
 
+    /**
+     *
+     * Get a stream of service ids
+     * For each batch of `dse.aggregation_batch_size`
+     *      create an RrdAggregationTask with a list of IdService
+     *      put the task into a list
+     * For some remaining service ids, create another RrdAggregationTask
+     *
+     * Initialize a CountDownLatch whose initial value = number of RrdAggregationTask to be executed
+     *
+     * For each RrdAggregationTask
+     *      set the CountDownLatch object so it can be decremented when the task completes
+     *      sleep for `dse.aggregation_task_submit_throttle_in_ms` to throttle the task submission
+     *      if the thread pool queue is full, sleep a little bit and retry
+     *      submit the task to the thread pool
+     *
+     * Once all tasks have been submitted, block on CountDownLatch.await() to let all the task complete their job
+     */
     public void aggregate(AggregationUnit aggregationUnit, Optional<LocalDateTime> date) throws InterruptedException {
 
         final LocalDateTime now = date.orElse(LocalDateTime.now(UTC_ZONE));
